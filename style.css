@@ -1,0 +1,53 @@
+body {
+	font-family: Arial, sans-serif;
+	text-align: center;
+	background: #f0f0f0;
+}
+
+#mainCanvas {
+	margin-top: 20px;
+	background: white;
+	border-radius: 10px;
+	box-shadow: 0 0 10px rgba(0,0,0,0.3);
+}
+
+#nameList {
+	margin: 20px;
+}
+
+.nameItem {
+	font-size: 15px;
+	display: inline-flex;
+	background: #76a526;
+	color: white;
+	padding: 8px;
+	border: none;
+	border-radius: 8px;
+	margin: 2px;
+	cursor: pointer;
+	user-select: none;
+}
+
+.excluded {
+	background: #ad00a0;
+}
+
+.disabled {
+	background: #ccc;
+	cursor: default;
+}
+
+#downloadButton {
+	font-size: 15px;
+	background: #bc2f49;
+	color: white;
+	padding: 8px;
+	border: none;
+	border-radius: 8px;
+	cursor: pointer;
+}
+
+#downloadButton:disabled {
+	background: #ccc;
+	cursor: default;
+}
