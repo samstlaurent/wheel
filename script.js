@@ -7,11 +7,11 @@ const TWO_PI = Math.PI * 2;
 
 let names = ["Aaron D", "Aaron E", "Andrea", "Jasmine", "Jayden", "Jonathan", "Josey", "Lauren", "Michelle", "Quintin", "Sam", "Victoria"];
 let includedNames = [...names];
-let arc = TWO_PI / includedNames.length;
 
 let wheelAngle = 0, wheelSpeed = 0, wheelFriction = 0;
 let busy = false, lastFrameTime = 0, lastTickTime = 0;
 let winningSegment = 0, previousWinningSegment = 0, arrowDeflection = 0;
+let segmentAngles = [];
 
 const wheelTick = document.getElementById("wheelTick");
 const wheelStopNeutral = document.getElementById("wheelStopNeutral");
@@ -25,33 +25,41 @@ const wheelCanvas = document.createElement("canvas"), wheelCtx = wheelCanvas.get
 wheelCanvas.width = mainCanvas.width; wheelCanvas.height = mainCanvas.height;
 function drawWheelBase() {
     wheelCtx.clearRect(0, 0, wheelCanvas.width, wheelCanvas.height);
-	
-	// Shuffle names to ensure fairness
-	for (let i = includedNames.length - 1; i > 0; i--) {
-		const j = Math.floor(Math.random() * (i + 1));
-		[includedNames[i], includedNames[j]] = [includedNames[j], includedNames[i]];
-	}
 
+    // Determine weights: selected name is half weight, others full weight
+    const weights = includedNames.map(n => (n === selectedName ? 0.5 : 1));
+    const totalWeight = weights.reduce((a, b) => a + b, 0);
+
+    // Compute angles for each segment and store in segmentAngles
+    segmentAngles = weights.map(w => TWO_PI * (w / totalWeight));
+
+    let startAngle = 0;
+
+    // Draw each segment
     includedNames.forEach((n, i) => {
-		const hue = Math.round((360 * i / includedNames.length) % 360);
-        const angle = i * arc;
+        const segArc = segmentAngles[i];
+        const hue = Math.round((360 * i / includedNames.length) % 360);
+
+        // Draw segment
         wheelCtx.fillStyle = `hsl(${hue}, 80%, 60%)`;
         wheelCtx.beginPath();
         wheelCtx.moveTo(canvasCenterX, canvasCenterY);
-        wheelCtx.arc(canvasCenterX, canvasCenterY, wheelRadius, angle, angle + arc, false);
+        wheelCtx.arc(canvasCenterX, canvasCenterY, wheelRadius, startAngle, startAngle + segArc, false);
         wheelCtx.lineTo(canvasCenterX, canvasCenterY);
         wheelCtx.fill();
 
         // Draw text
         wheelCtx.save();
         wheelCtx.translate(canvasCenterX, canvasCenterY);
-        wheelCtx.rotate(angle + arc / 2);
+        wheelCtx.rotate(startAngle + segArc / 2);
         wheelCtx.textAlign = "right";
         wheelCtx.textBaseline = "middle";
         wheelCtx.fillStyle = "black";
-		wheelCtx.font = "16px Arial";
+        wheelCtx.font = "16px Arial";
         wheelCtx.fillText(n, wheelRadius - 10, 0);
         wheelCtx.restore();
+
+        startAngle += segArc;
     });
 }
 
@@ -66,17 +74,20 @@ function drawCanvas() {
 		wheelSpeed *= Math.pow(wheelFriction, delta * 60);
 		wheelAngle = (wheelAngle + wheelSpeed * delta * 60) % TWO_PI;
 		const relativeAngle = (TWO_PI - wheelAngle) % TWO_PI;
-		winningSegment = Math.floor(relativeAngle / arc);
+		let angle = relativeAngle;
+        for (let i = 0; i < segmentAngles.length; i++) {
+            if (angle <= segmentAngles[i]) {
+                winningSegment = i;
+                break;
+            }
+            angle -= segmentAngles[i];
+        }
 		if (wheelSpeed < 0.001) {
 			wheelSpeed = 0;
 			const randomNumber = Math.random();
-			if (randomNumber < 0.8) {
-				wheelStopEffectNeutral();
-			} else if (randomNumber < 0.95) {
-				wheelStopEffectParty();
-			} else {
-				wheelStopEffectOminous();
-			}
+			if (randomNumber < 0.8) wheelStopEffectNeutral();
+            else if (randomNumber < 0.95) wheelStopEffectParty();
+            else wheelStopEffectOminous();
 		}
 		
 		// Check if the arrow has crossed a segment boundary
@@ -178,23 +189,27 @@ function drawCanvas() {
     ctx.drawImage(wheelCanvas, -canvasCenterX, -canvasCenterY);
 	
     // Draw highlight over the current winning segment
-    const highlightAngle = winningSegment * arc;
+	let highlightStart = 0;
+    for (let i = 0; i < winningSegment; i++) highlightStart += segmentAngles[i];
+    const highlightArc = segmentAngles[winningSegment];
 	ctx.fillStyle = '#f2f2f2';
-	ctx.beginPath();
-	ctx.moveTo(0, 0);
-	ctx.arc(0, 0, wheelRadius + 1, highlightAngle, highlightAngle + arc, false);
-	ctx.lineTo(0, 0);
-	ctx.fill();
-	ctx.strokeStyle = '#f2f2f2';
-	ctx.lineWidth = 2;
-	ctx.stroke();
-	ctx.rotate(highlightAngle + arc / 2);
-	ctx.textAlign = "right";
-	ctx.textBaseline = "middle";
-	ctx.fillStyle = "black";
-	ctx.font = "16px Arial";
-	ctx.fillText(includedNames[winningSegment], wheelRadius - 10, 0);
-	ctx.restore();
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.arc(0, 0, wheelRadius + 1, highlightStart, highlightStart + highlightArc, false);
+    ctx.lineTo(0, 0);
+    ctx.fill();
+    ctx.strokeStyle = '#f2f2f2';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+	ctx.save();
+    ctx.rotate(highlightStart + highlightArc / 2);
+    ctx.textAlign = "right";
+    ctx.textBaseline = "middle";
+    ctx.fillStyle = "black";
+    ctx.font = "16px Arial";
+    ctx.fillText(includedNames[winningSegment], wheelRadius - 10, 0);
+    ctx.restore();
+    ctx.restore();
 	
 	// Draw spin button
 	ctx.save();
@@ -277,6 +292,19 @@ function drawCanvas() {
 		mediaRecorder.stop();
 		updateCursor(lastMouseEvent);
 		document.querySelectorAll("#nameList .nameItem").forEach(item => item.classList.remove("disabled"));
+		document.querySelectorAll("#nameList .nameWrapper").forEach(wrapper => { // Disable icon pointers
+			const iconContainer = wrapper.querySelector(".iconContainer");
+			const icon = wrapper.querySelector(".selectorIcon");
+			const nameItem = wrapper.querySelector(".nameItem");
+			if (iconContainer) iconContainer.style.cursor = "pointer";
+			if (icon) {
+				if (nameItem && nameItem.textContent === selectedName) {
+					icon.src = "images/selectorIconEnabled.png";
+				} else {
+					icon.src = "images/selectorIconDisabled.png";
+				}
+			}
+		});
 	}
 	if (wheelSpeed == 0 && arrowDeflection == 0 && activeSounds.size === 0 && confetti.length == 0 && smoke.length == 0) { busy = false }
 }
@@ -316,34 +344,78 @@ function playSound(audio, volume = 1.0) {
 	audio.play();
 }
 
-// Add toggle buttons for each name
-document.getElementById("nameList").innerHTML = "";
-[...names].sort((a, b) => a.localeCompare(b)).forEach(n => {
+// Add controls for each name
+let selectedIcon = null, selectedName = null;
+document.getElementById("nameList").innerHTML = ""; // Clear existing items
+[...names].sort((a, b) => a.localeCompare(b)).forEach((n, index) => {
+
+	// The icon itself
+	const icon = document.createElement("img");
+	icon.src = "images/selectorIconDisabled.png";
+	icon.alt = "";
+    icon.className = "selectorIcon";
+	icon.style.height = "24px";
+
+	// The hitbox container for the icon
+	const iconContainer = document.createElement("div");
+    iconContainer.className = "iconContainer";
+	iconContainer.style.width = "100%";
+	iconContainer.style.display = "flex";
+	iconContainer.style.justifyContent = "center";
+	iconContainer.style.cursor = "pointer";
+	iconContainer.style.marginBottom = "4px";
+	iconContainer.appendChild(icon);
+	iconContainer.onclick = () => {
+		if (!busy) {
+			if (selectedIcon) selectedIcon.src = "images/selectorIconDisabled.png";
+			icon.src = "images/selectorIconEnabled.png";
+			selectedIcon = icon;
+			selectedName = n;
+			drawWheelBase();
+			drawCanvas();
+		}
+	};
+
+	// The button itself
 	const item = document.createElement("span");
 	item.className = "nameItem";
 	item.textContent = n;
-
 	item.onclick = () => {
 		if (!busy) {
 			const idx = includedNames.indexOf(n);
-			if (idx !== -1) { // Remove name from includedNames
+			if (idx !== -1) {
 				if (includedNames.length > 1) {
 					includedNames.splice(idx, 1);
 					item.classList.add("excluded");
 				}
-			} else { // Add name back
+			} else {
 				includedNames.push(n);
 				item.classList.remove("excluded");
 			}
-			
-			arc = TWO_PI / includedNames.length;
+
 			wheelAngle = 0;
 			winningSegment = 0;
 			drawWheelBase();
 			drawCanvas();
 		}
 	};
-	document.getElementById("nameList").appendChild(item);
+
+	// Wrapper that holds icon + button
+	const wrapper = document.createElement("div");
+    wrapper.className = "nameWrapper";
+	wrapper.style.display = "inline-flex";
+	wrapper.style.flexDirection = "column";
+	wrapper.style.alignItems = "center";
+	wrapper.style.margin = "4px";
+	wrapper.appendChild(iconContainer);
+	wrapper.appendChild(item);
+	document.getElementById("nameList").appendChild(wrapper);
+	
+	if (index === 0) {
+        icon.src = "images/selectorIconEnabled.png";
+        selectedIcon = icon;
+        selectedName = n;
+    }
 });
 
 // Check if user is hovering over the spin button
@@ -376,6 +448,12 @@ mainCanvas.addEventListener("click", e => {
 		lastFrameTime = performance.now();
 		document.getElementById("downloadButton").disabled = true;
 		document.querySelectorAll("#nameList .nameItem").forEach(item => item.classList.add("disabled"));
+		document.querySelectorAll("#nameList .nameWrapper").forEach(wrapper => { // Disable icon pointers
+			const iconContainer = wrapper.querySelector(".iconContainer");
+			const icon = wrapper.querySelector(".selectorIcon");
+			if (iconContainer) iconContainer.style.cursor = "default";
+			if (icon) icon.src = "images/selectorIconDisabled.png";
+		});
 		recordedChunks = [];
 		mediaRecorder.start();
 		drawCanvas();
