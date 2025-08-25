@@ -7,6 +7,7 @@ const TWO_PI = Math.PI * 2;
 
 let names = ["Aaron D", "Aaron E", "Andrea", "Jasmine", "Jayden", "Jonathan", "Josey", "Lauren", "Michelle", "Quintin", "Sam", "Victoria"];
 let includedNames = [...names];
+let shuffledNames = [...includedNames];
 
 let wheelAngle = 0, wheelSpeed = 0, wheelFriction = 0;
 let busy = false, lastFrameTime = 0, lastTickTime = 0;
@@ -26,8 +27,15 @@ wheelCanvas.width = mainCanvas.width; wheelCanvas.height = mainCanvas.height;
 function drawWheelBase() {
     wheelCtx.clearRect(0, 0, wheelCanvas.width, wheelCanvas.height);
 
+    // Shuffle the includedNames array
+    shuffledNames = [...includedNames];
+    for (let i = shuffledNames.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffledNames[i], shuffledNames[j]] = [shuffledNames[j], shuffledNames[i]];
+    }
+
     // Determine weights: selected name is half weight, others full weight
-    const weights = includedNames.map(n => (n === selectedName ? 0.5 : 1));
+    const weights = shuffledNames.map(n => (n === selectedName ? 0.5 : 1));
     const totalWeight = weights.reduce((a, b) => a + b, 0);
 
     // Compute angles for each segment and store in segmentAngles
@@ -36,9 +44,9 @@ function drawWheelBase() {
     let startAngle = 0;
 
     // Draw each segment
-    includedNames.forEach((n, i) => {
+    shuffledNames.forEach((n, i) => {
         const segArc = segmentAngles[i];
-        const hue = Math.round((360 * i / includedNames.length) % 360);
+        const hue = Math.round((360 * i / shuffledNames.length) % 360);
 
         // Draw segment
         wheelCtx.fillStyle = `hsl(${hue}, 80%, 60%)`;
@@ -61,18 +69,21 @@ function drawWheelBase() {
 
         startAngle += segArc;
     });
+
+    drawCanvas();
 }
 
 function drawCanvas() {
 
 	const now = performance.now();
-	const delta = (now - lastFrameTime) / 1000;
+	const delta = now - lastFrameTime;
+	const frameMultiplier = delta / 1000 * 60;
 	lastFrameTime = now;
 	
 	// Compute changes to wheel
 	if (wheelSpeed > 0) {
-		wheelSpeed *= Math.pow(wheelFriction, delta * 60);
-		wheelAngle = (wheelAngle + wheelSpeed * delta * 60) % TWO_PI;
+		wheelSpeed *= Math.pow(wheelFriction, frameMultiplier);
+		wheelAngle = (wheelAngle + wheelSpeed * frameMultiplier) % TWO_PI;
 		const relativeAngle = (TWO_PI - wheelAngle) % TWO_PI;
 		let angle = relativeAngle;
         for (let i = 0; i < segmentAngles.length; i++) {
@@ -105,7 +116,7 @@ function drawCanvas() {
 	
 	// Compute changes to arrow
 	if (arrowDeflection != 0) {
-		arrowDeflection *= Math.pow(0.7, delta * 60);
+		arrowDeflection *= Math.pow(0.7, frameMultiplier);
 		if (Math.abs(arrowDeflection) < 0.01) {	arrowDeflection = 0; }	
 	}
 	
@@ -124,14 +135,14 @@ function drawCanvas() {
 				rotationSpeed: (Math.random() - 0.5) * 10
 			});
 		}
-		confettiSpawnTime = Math.max(0, confettiSpawnTime - delta * 1000);
+		confettiSpawnTime = Math.max(0, confettiSpawnTime - delta);
 	}
 	if (confetti.length > 0) {
 		confetti.forEach(p => {
-			p.x += p.dx * delta * 60;
-			p.y += p.dy * delta * 60;
-			p.dy += 0.05 * delta * 60;
-			p.rotation += p.rotationSpeed * delta * 60;
+			p.x += p.dx * frameMultiplier;
+			p.y += p.dy * frameMultiplier;
+			p.dy += 0.05 * frameMultiplier;
+			p.rotation += p.rotationSpeed * frameMultiplier;
 		});
 		confetti = confetti.filter(p => p.y - p.size/2 < mainCanvas.height); // Remove confetti that has fallen off screen
 	}
@@ -157,22 +168,22 @@ function drawCanvas() {
             });
             smoke[smoke.length - 1].lifetime = smoke[smoke.length - 1].fadeInDuration + smoke[smoke.length - 1].fadeOutDuration;
 		}
-		smokeSpawnTime = Math.max(0, smokeSpawnTime - delta * 1000);
+		smokeSpawnTime = Math.max(0, smokeSpawnTime - delta);
 	}
 	if (smoke.length > 0) {
         smoke.forEach(p => {
-            p.age += delta * 1000;
-            p.x += p.dx * delta * 60;
-            p.y += p.dy * delta * 60;
-            p.dx += (Math.random() - 0.5) * 0.05 * delta * 60;
-            p.dy += (Math.random() - 0.5) * 0.05 * delta * 60;
+            p.age += delta;
+            p.x += p.dx * frameMultiplier;
+            p.y += p.dy * frameMultiplier;
+            p.dx += (Math.random() - 0.5) * 0.05 * frameMultiplier;
+            p.dy += (Math.random() - 0.5) * 0.05 * frameMultiplier;
             if (p.age < p.fadeInDuration) {
                 p.alpha = (p.age / p.fadeInDuration) * p.maxAlpha;
             } else if (p.age < p.lifetime) {
                 const fadeOutProgress = (p.age - p.fadeInDuration) / p.fadeOutDuration;
                 p.alpha = p.maxAlpha * (1 - fadeOutProgress);
             }
-            p.size += 0.3 * delta * 60;
+            p.size += 0.3 * frameMultiplier;
         });
         smoke = smoke.filter(p => p.age < p.lifetime);
     }
@@ -207,7 +218,7 @@ function drawCanvas() {
     ctx.textBaseline = "middle";
     ctx.fillStyle = "black";
     ctx.font = "16px Arial";
-    ctx.fillText(includedNames[winningSegment], wheelRadius - 10, 0);
+    ctx.fillText(shuffledNames[winningSegment], wheelRadius - 10, 0);
     ctx.restore();
     ctx.restore();
 	
@@ -372,7 +383,6 @@ document.getElementById("nameList").innerHTML = ""; // Clear existing items
 			selectedIcon = icon;
 			selectedName = n;
 			drawWheelBase();
-			drawCanvas();
 		}
 	};
 
@@ -396,7 +406,6 @@ document.getElementById("nameList").innerHTML = ""; // Clear existing items
 			wheelAngle = 0;
 			winningSegment = 0;
 			drawWheelBase();
-			drawCanvas();
 		}
 	};
 
@@ -487,4 +496,3 @@ mediaRecorder.onstop = () => {
 };
 
 drawWheelBase();
-drawCanvas();
