@@ -538,6 +538,7 @@ mediaRecorder.onstop = () => {
 	document.getElementById("downloadButton").disabled = false;
 };
 
-playTick(0); // to hopefully fix audio delay issue
+playTick(0.01); // to hopefully fix audio delay issue
 drawWheelBase();
+
 
