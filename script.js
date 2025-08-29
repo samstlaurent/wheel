@@ -12,7 +12,7 @@ let shuffledNames = [...includedNames];
 let wheelAngle = 0, wheelSpeed = 0, wheelFriction = 0;
 let busy = false, lastFrameTime = 0, lastTickTime = 0;
 let winningSegment = 0, previousWinningSegment = 0, arrowDeflection = 0;
-let segmentAngles = [];
+let segmentAngles = [], segmentBoundaries = [];;
 
 const wheelTick = document.getElementById("wheelTick");
 const wheelStopNeutral = document.getElementById("wheelStopNeutral");
@@ -41,9 +41,8 @@ function drawWheelBase() {
     // Compute angles for each segment and store in segmentAngles
     segmentAngles = weights.map(w => TWO_PI * (w / totalWeight));
 
-    let startAngle = 0;
-
     // Draw each segment
+    let startAngle = 0;
     shuffledNames.forEach((n, i) => {
         const segArc = segmentAngles[i];
         const hue = Math.round((360 * i / shuffledNames.length) % 360);
@@ -69,6 +68,14 @@ function drawWheelBase() {
 
         startAngle += segArc;
     });
+	
+	// Pre-compute segment boundaries to avoid expensive loop each frame
+	segmentBoundaries = [];
+	let total = 0;
+	for (let seg of segmentAngles) {
+		total += seg;
+		segmentBoundaries.push(total);
+	}
 
     drawCanvas();
 }
@@ -85,14 +92,16 @@ function drawCanvas() {
 		wheelSpeed *= Math.pow(wheelFriction, frameMultiplier);
 		wheelAngle = (wheelAngle + wheelSpeed * frameMultiplier) % TWO_PI;
 		const relativeAngle = (TWO_PI - wheelAngle) % TWO_PI;
-		let angle = relativeAngle;
-        for (let i = 0; i < segmentAngles.length; i++) {
-            if (angle <= segmentAngles[i]) {
-                winningSegment = i;
-                break;
-            }
-            angle -= segmentAngles[i];
-        }
+		let low = 0, high = segmentBoundaries.length - 1;
+		while (low <= high) {
+			const mid = (low + high) >> 1;
+			if (relativeAngle <= segmentBoundaries[mid]) {
+				winningSegment = mid;
+				high = mid - 1;
+			} else {
+				low = mid + 1;
+			}
+		}
 		if (wheelSpeed < 0.001) {
 			wheelSpeed = 0;
 			const randomNumber = Math.random();
@@ -105,9 +114,7 @@ function drawCanvas() {
 		if (winningSegment != previousWinningSegment) {
 			arrowDeflection = Math.max(-1.2, -2.5*wheelSpeed - 0.7);
 			if (now - lastTickTime >= 80) {
-				const wheelTickClone = wheelTick.cloneNode();
-				setTimeout(() => playSound(wheelTickClone, Math.min(1, 1.5*wheelSpeed + 0.7)), 50);
-				wheelTickClone.addEventListener("ended", () => wheelTickClone.remove());
+				setTimeout(() => playTick(Math.min(1, 1.5*wheelSpeed + 0.7)), 30);
 				lastTickTime = now;
 			}
 			previousWinningSegment = winningSegment;
@@ -149,7 +156,7 @@ function drawCanvas() {
 	
 	// Compute changes to smoke
 	if (smokeSpawnTime > 0) {
-		const spawnCount = Math.floor(Math.random() * 1) + 1;
+		const spawnCount = Math.floor(Math.random()) + 1;
 		for (let i = 0; i < spawnCount; i++) {
 			const side = Math.random() < 0.5 ? 0 : 1; // 0 = left, 1 = right
 			smoke.push({
@@ -296,12 +303,13 @@ function drawCanvas() {
             ctx.fill();
         }
     });
-
+	
 	if (busy) {
 		requestAnimationFrame(drawCanvas);
 	} else {
 		mediaRecorder.stop();
 		updateCursor(lastMouseEvent);
+		document.getElementById("instructionsButton").disabled = false;
 		document.querySelectorAll("#nameList .nameItem").forEach(item => item.classList.remove("disabled"));
 		document.querySelectorAll("#nameList .nameWrapper").forEach(wrapper => { // Disable icon pointers
 			const iconContainer = wrapper.querySelector(".iconContainer");
@@ -353,6 +361,29 @@ function playSound(audio, volume = 1.0) {
 	activeSounds.add(audio);
 	audio.onended = () => { activeSounds.delete(audio); };
 	audio.play();
+}
+
+let wheelTickBuffer = null;
+async function initWheelTick() {
+    const response = await fetch(wheelTick.src, { mode: "cors" });
+    const arrayBuffer = await response.arrayBuffer();
+    wheelTickBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+}
+initWheelTick();
+
+function playTick(volume = 1.0) {
+    if (!wheelTickBuffer) return;
+
+    const source = audioCtx.createBufferSource();
+    source.buffer = wheelTickBuffer;
+
+    const gainNode = audioCtx.createGain();
+    gainNode.gain.value = volume;
+
+    source.connect(gainNode).connect(audioCtx.destination);
+    source.connect(gainNode).connect(audioDestination);
+
+    source.start();
 }
 
 // Add controls for each name
@@ -456,6 +487,7 @@ mainCanvas.addEventListener("click", e => {
 		wheelFriction = Math.random()*0.01 + 0.982;
 		lastFrameTime = performance.now();
 		document.getElementById("downloadButton").disabled = true;
+		document.getElementById("instructionsButton").disabled = true;
 		document.querySelectorAll("#nameList .nameItem").forEach(item => item.classList.add("disabled"));
 		document.querySelectorAll("#nameList .nameWrapper").forEach(wrapper => { // Disable icon pointers
 			const iconContainer = wrapper.querySelector(".iconContainer");
@@ -467,6 +499,17 @@ mainCanvas.addEventListener("click", e => {
 		mediaRecorder.start();
 		drawCanvas();
 	};
+});
+
+// Show instructions when button clicked
+const modal = document.getElementById("instructionsModal");
+document.getElementById("instructionsButton").addEventListener("click", () => {
+	modal.style.display = "flex";
+});
+modal.addEventListener("click", (e) => {
+	if (e.target === modal) {
+		modal.style.display = "none";
+	}
 });
 
 // Setup recording

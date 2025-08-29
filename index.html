@@ -8,7 +8,25 @@
 <body>
 	<canvas id="mainCanvas" width="800" height="600"></canvas>
 	<div id="nameList"></div>
+	<button id="instructionsButton">Instructions</button>
 	<button id="downloadButton" disabled>Download Video</button>
+
+	<div id="instructionsModal">
+		<div id="instructionsContent">
+			<h2>Instructions</h2>
+			<p>
+				<span class="instructionLine">
+					Click the <img src="images/selectorIconDisabled.png" class="instructionsInlineIcon"> icon above your <span class="instructionsInlineNameButton">Name</span> to mark yourself as the current selector.
+				</span>
+				<span class="instructionLine">
+					Click on the <span class="instructionsInlineNameButton">Name</span> buttons to temporarily remove those who are unavailable.
+				</span>
+				<span class="instructionLine">
+					Spin the wheel then use <span class="instructionsInlineDownloadButton">Download Video</span> to post in the Teams chat.
+				</span>
+			</p>
+		</div>
+	</div>
 
 	<audio id="wheelTick" src="https://raw.githubusercontent.com/samstlaurent/wheel/main/audio/wheelTick.mp3" crossorigin=""></audio>
 	<audio id="wheelStopNeutral" src="https://raw.githubusercontent.com/samstlaurent/wheel/main/audio/wheelStopNeutral.mp3" crossorigin=""></audio>
