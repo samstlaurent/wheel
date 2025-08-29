@@ -507,9 +507,7 @@ document.getElementById("instructionsButton").addEventListener("click", () => {
 	modal.style.display = "flex";
 });
 modal.addEventListener("click", (e) => {
-	if (e.target === modal) {
-		modal.style.display = "none";
-	}
+	modal.style.display = "none";
 });
 
 // Setup recording
@@ -540,5 +538,6 @@ mediaRecorder.onstop = () => {
 
 playTick(0.01); // to hopefully fix audio delay issue
 drawWheelBase();
+
 
 
