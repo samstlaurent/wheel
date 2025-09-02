@@ -585,7 +585,7 @@ modal.addEventListener("click", (e) => {
 const videoStream = mainCanvas.captureStream(60);
 const audioStream = audioDestination.stream;
 const combinedStream = new MediaStream([...videoStream.getTracks(), ...audioStream.getTracks()]);
-mediaRecorder = new MediaRecorder(combinedStream, {mimeType: 'video/webm;codecs=vp9,opus'});
+mediaRecorder = new MediaRecorder(combinedStream, {mimeType: 'video/webm'});
 mediaRecorder.ondataavailable = (event) => { if (event.data.size > 0) { recordedChunks.push(event.data); } };
 mediaRecorder.onstop = () => {
 	const blob = new Blob(recordedChunks, { type: 'video/webm' });
@@ -608,3 +608,4 @@ mediaRecorder.onstop = () => {
 };
 
 drawWheelBase();
+
