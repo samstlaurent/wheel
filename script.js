@@ -17,6 +17,7 @@ let segmentAngles = [], segmentBoundaries = [];;
 const wheelTick = document.getElementById("wheelTick");
 const wheelStopNeutral = document.getElementById("wheelStopNeutral");
 const wheelStopParty = document.getElementById("wheelStopParty");
+const wheelStopSpectacle = document.getElementById("wheelStopSpectacle");
 const wheelStopOminous = document.getElementById("wheelStopOminous");
 
 const selectorDropdown = document.getElementById("selectorDropdown");
@@ -105,8 +106,9 @@ function drawCanvas() {
 		if (wheelSpeed < 0.001) {
 			wheelSpeed = 0;
 			const randomNumber = Math.random();
-			if (randomNumber < 0.8) wheelStopEffectNeutral();
-            else if (randomNumber < 0.95) wheelStopEffectParty();
+			if (randomNumber < 0.31) wheelStopEffectNeutral();
+            else if (randomNumber < 0.62) wheelStopEffectParty();
+            else if (randomNumber < 0.95) wheelStopEffectSpectacle();
             else wheelStopEffectOminous();
 		}
 		
@@ -114,7 +116,7 @@ function drawCanvas() {
 		if (winningSegment != previousWinningSegment) {
 			arrowDeflection = Math.max(-1.2, -2.5*wheelSpeed - 0.7);
 			if (now - lastTickTime >= 80) {
-				setTimeout(() => playTick(Math.min(1, 1.5*wheelSpeed + 0.7)), 30);
+				playTick(Math.min(1, 1.5*wheelSpeed + 0.7));
 				lastTickTime = now;
 			}
 			previousWinningSegment = winningSegment;
@@ -127,6 +129,32 @@ function drawCanvas() {
 		if (Math.abs(arrowDeflection) < 0.01) {	arrowDeflection = 0; }	
 	}
 	
+	// Compute changes to balloons
+	if (balloonSpawnTime > 0) {
+		const spawnCount = Math.floor(Math.random() + 0.2);
+		for (let i = 0; i < spawnCount; i++) {
+			balloons.push({
+				x: Math.random() * mainCanvas.width,
+				y: mainCanvas.height + 40,
+				dx: (Math.random() - 0.5) * 0.5,
+				dy: -(Math.random() * 1.5 + 3),
+				sway: Math.random() * Math.PI * 2,
+				swaySpeed: (Math.random() * 0.02) + 0.01,
+				color: balloonColors[Math.floor(Math.random() * balloonColors.length)],
+				size: Math.random() * 20 + 30
+			});
+		}
+		balloonSpawnTime = Math.max(0, balloonSpawnTime - delta);
+	}
+	if (balloons.length > 0) {
+		balloons.forEach(b => {
+			b.y += b.dy * frameMultiplier;
+			b.sway += b.swaySpeed * frameMultiplier;
+			b.x += Math.sin(b.sway) * 0.5 * frameMultiplier;
+		});
+		balloons = balloons.filter(b => b.y + b.size > -50); // remove if off top
+	}
+
 	// Compute changes to confetti
 	if (confettiSpawnTime > 0) {
 		const spawnCount = Math.floor(Math.random() * 5) + 3;
@@ -156,7 +184,7 @@ function drawCanvas() {
 	
 	// Compute changes to smoke
 	if (smokeSpawnTime > 0) {
-		const spawnCount = Math.floor(Math.random()) + 1;
+		const spawnCount = 1;
 		for (let i = 0; i < spawnCount; i++) {
 			const side = Math.random() < 0.5 ? 0 : 1; // 0 = left, 1 = right
 			smoke.push({
@@ -194,7 +222,7 @@ function drawCanvas() {
         });
         smoke = smoke.filter(p => p.age < p.lifetime);
     }
-
+	
 	// Prepare the canvas for drawing
 	ctx.clearRect(0, 0, mainCanvas.width, mainCanvas.height);
 	ctx.fillStyle = "white";
@@ -255,8 +283,39 @@ function drawCanvas() {
 	ctx.stroke();
 	ctx.restore();
 	
-	// Draw spotlights
-	if (confetti.length > 0) {
+	// Draw balloons
+	balloons.forEach(b => {
+		ctx.fillStyle = b.color;
+		ctx.beginPath();
+		ctx.ellipse(b.x, b.y, b.size * 0.8, b.size, 0, 0, TWO_PI);
+		ctx.fill();
+		const mouthWidth = b.size * 0.2;
+		const mouthHeight = b.size * 0.15;
+		ctx.fillStyle = b.color;
+		ctx.beginPath();
+		ctx.moveTo(b.x - mouthWidth / 2, b.y + b.size); // left corner
+		ctx.lineTo(b.x + mouthWidth / 2, b.y + b.size); // right corner
+		ctx.lineTo(b.x, b.y + b.size + mouthHeight);    // bottom tip
+		ctx.closePath();
+		ctx.fill();
+		ctx.fillStyle = "rgba(255,255,255,0.6)";
+		ctx.beginPath();
+		ctx.arc(b.x - b.size * 0.2, b.y - b.size * 0.3, b.size * 0.15, 0, TWO_PI);
+		ctx.fill();
+	});
+	
+	// Draw confetti
+	confetti.forEach(piece => {
+		ctx.save();
+		ctx.translate(piece.x, piece.y);
+		ctx.rotate(piece.rotation * Math.PI / 180);
+		ctx.fillStyle = piece.color;
+		ctx.fillRect(-piece.size/2, -piece.size/2, piece.size, piece.size);
+		ctx.restore();
+	});
+	
+	// Draw stagelights
+	if (stagelightTime > 0) {
 		for (let side = 0; side < 2; side++) { // 0 = left, 1 = right
 			const baseX = side === 0 ? 0 : mainCanvas.width;
 			const direction = side === 0 ? 1 : -1;
@@ -275,17 +334,8 @@ function drawCanvas() {
 			ctx.fill();
 			ctx.restore();
 		}
+		stagelightTime = Math.max(0, stagelightTime - delta);
 	}
-	
-	// Draw confetti
-	confetti.forEach(piece => {
-		ctx.save();
-		ctx.translate(piece.x, piece.y);
-		ctx.rotate(piece.rotation * Math.PI / 180);
-		ctx.fillStyle = piece.color;
-		ctx.fillRect(-piece.size/2, -piece.size/2, piece.size, piece.size);
-		ctx.restore();
-	});
 	
 	// Draw smoke
 	smoke.forEach(p => {
@@ -325,25 +375,38 @@ function drawCanvas() {
 			}
 		});
 	}
-	if (wheelSpeed == 0 && arrowDeflection == 0 && activeSounds.size === 0 && confetti.length == 0 && smoke.length == 0) { busy = false }
+	if (wheelSpeed == 0 && arrowDeflection == 0 && activeSounds.size === 0 && confetti.length == 0 && smoke.length == 0 && balloons.length == 0 && stagelightTime == 0) { busy = false }
 }
 
+let balloons = [], balloonSpawnTime = 0;
+const balloonColors = ['#ff6b6b', '#6c5ce7', '#f9ca24', '#55efc4', '#fab1a0'];
 function wheelStopEffectNeutral() {
 	playSound(wheelStopNeutral);
+    balloonSpawnTime = 500;
 }
 
 const confettiColors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#f9ca24', '#6c5ce7', '#a0e7e5', '#ffeaa7', '#fd79a8', '#00b894', '#e17055', '#74b9ff', '#55a3ff', '#fd9644', '#d63031', '#00cec9'];
 let confetti = [], confettiSpawnTime = 0;
 function wheelStopEffectParty() {
 	playSound(wheelStopParty, 0.4);
-	confettiSpawnTime = 2000;
+	confettiSpawnTime = 1000;
+}
+
+let stagelightTime = 0;
+function wheelStopEffectSpectacle() {
+	playSound(wheelStopSpectacle, 1);
+	stagelightTime = 3000;
 }
 
 let smoke = [], smokeSpawnTime = 0;
 function wheelStopEffectOminous() {
 	playSound(wheelStopOminous, 1);
-	smokeSpawnTime = 5000;
+	smokeSpawnTime = 4000;
 }
+
+// red alarm
+// fireworks
+// slot machine strobing lights
 
 const audioCtx = new AudioContext(), audioDestination = audioCtx.createMediaStreamDestination();
 let activeSounds = new Set(), audioSources = new WeakMap();
@@ -368,6 +431,14 @@ async function initWheelTick() {
     const response = await fetch(wheelTick.src, { mode: "cors" });
     const arrayBuffer = await response.arrayBuffer();
     wheelTickBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+	
+	// Warm up: play one silent tick
+	const source = audioCtx.createBufferSource();
+    source.buffer = wheelTickBuffer;
+    const gain = audioCtx.createGain();
+    gain.gain.value = 0;
+    source.connect(gain).connect(audioCtx.destination);
+    source.start();
 }
 initWheelTick();
 
@@ -383,7 +454,7 @@ function playTick(volume = 1.0) {
     source.connect(gainNode).connect(audioCtx.destination);
     source.connect(gainNode).connect(audioDestination);
 
-    source.start();
+    source.start(audioCtx.currentTime + 0.05);
 }
 
 // Add controls for each name
@@ -536,8 +607,4 @@ mediaRecorder.onstop = () => {
 	document.getElementById("downloadButton").disabled = false;
 };
 
-playTick(0.01); // to hopefully fix audio delay issue
 drawWheelBase();
-
-
-
