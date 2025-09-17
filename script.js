@@ -5,7 +5,7 @@ const wheelRadius = Math.min(canvasCenterX, canvasCenterY) - 50;
 const spinButtonRadius = 60;
 const TWO_PI = Math.PI * 2;
 
-let names = ["Aaron D", "Aaron E", "Andrea", "Jasmine", "Jayden", "Jonathan", "Josey", "Lauren", "Michelle", "Quintin", "Sam", "Victoria"];
+let names = ["Aaron D", "Aaron E", "Andrea", "Jasmine", "Jayden", "Jessica", "Jonathan", "Josey", "Lauren", "Michelle", "Quintin", "Sam", "Victoria"];
 let includedNames = [...names];
 let shuffledNames = [...includedNames];
 
@@ -18,7 +18,6 @@ const wheelTick = document.getElementById("wheelTick");
 const wheelStopNeutral = document.getElementById("wheelStopNeutral");
 const wheelStopParty = document.getElementById("wheelStopParty");
 const wheelStopSpectacle = document.getElementById("wheelStopSpectacle");
-const wheelStopOminous = document.getElementById("wheelStopOminous");
 
 const selectorDropdown = document.getElementById("selectorDropdown");
 
@@ -108,8 +107,7 @@ function drawCanvas() {
 			const randomNumber = Math.random();
 			if (randomNumber < 0.31) wheelStopEffectNeutral();
             else if (randomNumber < 0.62) wheelStopEffectParty();
-            else if (randomNumber < 0.95) wheelStopEffectSpectacle();
-            else wheelStopEffectOminous();
+            else wheelStopEffectSpectacle();
 		}
 		
 		// Check if the arrow has crossed a segment boundary
@@ -181,47 +179,6 @@ function drawCanvas() {
 		});
 		confetti = confetti.filter(p => p.y - p.size/2 < mainCanvas.height); // Remove confetti that has fallen off screen
 	}
-	
-	// Compute changes to smoke
-	if (smokeSpawnTime > 0) {
-		const spawnCount = 1;
-		for (let i = 0; i < spawnCount; i++) {
-			const side = Math.random() < 0.5 ? 0 : 1; // 0 = left, 1 = right
-			smoke.push({
-                x: Math.random() * mainCanvas.width,
-                y: Math.random() * mainCanvas.height,
-                dx: (Math.random() - 0.5) * 0.2,
-                dy: (Math.random() - 0.5) * 0.2,
-                size: 40 + Math.random() * 60,
-                alpha: 0,
-                maxAlpha: 0.08 + Math.random() * 0.04,
-                fadeInDuration: 1000 + Math.random() * 1000,
-                fadeOutDuration: 1000 + Math.random() * 2000,
-                lifetime: 0,
-                age: 0,
-                puffs: 3 + Math.floor(Math.random() * 3) // 3-5 puffs per particle
-            });
-            smoke[smoke.length - 1].lifetime = smoke[smoke.length - 1].fadeInDuration + smoke[smoke.length - 1].fadeOutDuration;
-		}
-		smokeSpawnTime = Math.max(0, smokeSpawnTime - delta);
-	}
-	if (smoke.length > 0) {
-        smoke.forEach(p => {
-            p.age += delta;
-            p.x += p.dx * frameMultiplier;
-            p.y += p.dy * frameMultiplier;
-            p.dx += (Math.random() - 0.5) * 0.05 * frameMultiplier;
-            p.dy += (Math.random() - 0.5) * 0.05 * frameMultiplier;
-            if (p.age < p.fadeInDuration) {
-                p.alpha = (p.age / p.fadeInDuration) * p.maxAlpha;
-            } else if (p.age < p.lifetime) {
-                const fadeOutProgress = (p.age - p.fadeInDuration) / p.fadeOutDuration;
-                p.alpha = p.maxAlpha * (1 - fadeOutProgress);
-            }
-            p.size += 0.3 * frameMultiplier;
-        });
-        smoke = smoke.filter(p => p.age < p.lifetime);
-    }
 	
 	// Prepare the canvas for drawing
 	ctx.clearRect(0, 0, mainCanvas.width, mainCanvas.height);
@@ -337,23 +294,6 @@ function drawCanvas() {
 		stagelightTime = Math.max(0, stagelightTime - delta);
 	}
 	
-	// Draw smoke
-	smoke.forEach(p => {
-        for (let i = 0; i < p.puffs; i++) {
-            const puffOffset = (i / p.puffs) * 30;
-            const puffSize = p.size * (1 - i * 0.1);
-            const puffAlpha = p.alpha * (1 - i * 0.2);
-            const gradient = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, puffSize);
-            gradient.addColorStop(0, `rgba(70, 70, 70, ${puffAlpha})`);
-            gradient.addColorStop(0.7, `rgba(50, 50, 50, ${puffAlpha * 0.7})`);
-            gradient.addColorStop(1, 'rgba(30, 30, 30, 0)');
-            ctx.fillStyle = gradient;
-            ctx.beginPath();
-            ctx.arc(p.x, p.y, puffSize, 0, TWO_PI);
-            ctx.fill();
-        }
-    });
-	
 	if (busy) {
 		requestAnimationFrame(drawCanvas);
 	} else {
@@ -375,7 +315,7 @@ function drawCanvas() {
 			}
 		});
 	}
-	if (wheelSpeed == 0 && arrowDeflection == 0 && activeSounds.size === 0 && confetti.length == 0 && smoke.length == 0 && balloons.length == 0 && stagelightTime == 0) { busy = false }
+	if (wheelSpeed == 0 && arrowDeflection == 0 && activeSounds.size === 0 && confetti.length == 0 && balloons.length == 0 && stagelightTime == 0) { busy = false }
 }
 
 let balloons = [], balloonSpawnTime = 0;
@@ -397,16 +337,6 @@ function wheelStopEffectSpectacle() {
 	playSound(wheelStopSpectacle, 1);
 	stagelightTime = 3000;
 }
-
-let smoke = [], smokeSpawnTime = 0;
-function wheelStopEffectOminous() {
-	playSound(wheelStopOminous, 1);
-	smokeSpawnTime = 4000;
-}
-
-// red alarm
-// fireworks
-// slot machine strobing lights
 
 const audioCtx = new AudioContext(), audioDestination = audioCtx.createMediaStreamDestination();
 let activeSounds = new Set(), audioSources = new WeakMap();
@@ -608,4 +538,5 @@ mediaRecorder.onstop = () => {
 };
 
 drawWheelBase();
+
 
