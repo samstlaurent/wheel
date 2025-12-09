@@ -5,7 +5,17 @@ const wheelRadius = Math.min(canvasCenterX, canvasCenterY) - 50;
 const spinButtonRadius = 60;
 const TWO_PI = Math.PI * 2;
 
-let names = ["Aaron D", "Aaron E", "Andrea", "Jasmine", "Jayden", "Jessica", "Jonathan", "Josey", "Lauren", "Michelle", "Quintin", "Sam", "Victoria"];
+const today = new Date();
+const month = today.getMonth() + 1;
+const day = today.getDate();
+
+let names = [];
+if (month == 4 && day == 1) {
+	names = ["Sam", "Sam", "Sam", "Sam", "Sam", "Sam", "Sam", "Sam", "Sam", "Sam", "Sam", "Sam", "Sam"];
+} else {
+	names = ["Aaron D", "Aaron E", "Andrea", "Jasmine", "Jayden", "Jessica", "Jonathan", "Josey", "Lauren", "Michelle", "Quintin", "Sam", "Victoria"];
+}
+
 let includedNames = [...names];
 let shuffledNames = [...includedNames];
 
@@ -18,8 +28,7 @@ const wheelTick = document.getElementById("wheelTick");
 const wheelStopNeutral = document.getElementById("wheelStopNeutral");
 const wheelStopParty = document.getElementById("wheelStopParty");
 const wheelStopSpectacle = document.getElementById("wheelStopSpectacle");
-
-const selectorDropdown = document.getElementById("selectorDropdown");
+const buttonPress = document.getElementById("buttonPress");
 
 // Unseen canvas for drawing the wheel (which then gets copied to the main canvas and rotated)
 const wheelCanvas = document.createElement("canvas"), wheelCtx = wheelCanvas.getContext("2d");
@@ -80,6 +89,7 @@ function drawWheelBase() {
     drawCanvas();
 }
 
+let spinLogged = false;
 function drawCanvas() {
 
 	const now = performance.now();
@@ -104,6 +114,13 @@ function drawCanvas() {
 		}
 		if (wheelSpeed < 0.001) {
 			wheelSpeed = 0;
+			
+			if (!spinLogged && window.firebaseAddSpin) {
+				spinLogged = true;
+				const winner = shuffledNames[winningSegment];
+				window.firebaseAddSpin(winner);
+			}
+			
 			const randomNumber = Math.random();
 			if (randomNumber < 0.31) wheelStopEffectNeutral();
             else if (randomNumber < 0.62) wheelStopEffectParty();
@@ -300,8 +317,9 @@ function drawCanvas() {
 		mediaRecorder.stop();
 		updateCursor(lastMouseEvent);
 		document.getElementById("instructionsButton").disabled = false;
+		document.getElementById("simulateButton").disabled = false;
 		document.querySelectorAll("#nameList .nameItem").forEach(item => item.classList.remove("disabled"));
-		document.querySelectorAll("#nameList .nameWrapper").forEach(wrapper => { // Disable icon pointers
+		document.querySelectorAll("#nameList .nameWrapper").forEach(wrapper => {
 			const iconContainer = wrapper.querySelector(".iconContainer");
 			const icon = wrapper.querySelector(".selectorIcon");
 			const nameItem = wrapper.querySelector(".nameItem");
@@ -361,14 +379,6 @@ async function initWheelTick() {
     const response = await fetch(wheelTick.src, { mode: "cors" });
     const arrayBuffer = await response.arrayBuffer();
     wheelTickBuffer = await audioCtx.decodeAudioData(arrayBuffer);
-	
-	// Warm up: play one silent tick
-	const source = audioCtx.createBufferSource();
-    source.buffer = wheelTickBuffer;
-    const gain = audioCtx.createGain();
-    gain.gain.value = 0;
-    source.connect(gain).connect(audioCtx.destination);
-    source.start();
 }
 initWheelTick();
 
@@ -410,10 +420,19 @@ document.getElementById("nameList").innerHTML = ""; // Clear existing items
 	iconContainer.appendChild(icon);
 	iconContainer.onclick = () => {
 		if (!busy) {
-			if (selectedIcon) selectedIcon.src = "images/selectorIconDisabled.png";
-			icon.src = "images/selectorIconEnabled.png";
-			selectedIcon = icon;
-			selectedName = n;
+			audioCtx.resume();
+			playSound(buttonPress, 0.5);
+			if (selectedName == n) {
+				icon.src = "images/selectorIconDisabled.png";
+				selectedIcon = null;
+				selectedName = null;
+			} else {
+				if (selectedIcon) selectedIcon.src = "images/selectorIconDisabled.png";
+				icon.src = "images/selectorIconEnabled.png";
+				selectedIcon = icon;
+				selectedName = n;
+			}
+			window.userName = selectedName;
 			drawWheelBase();
 		}
 	};
@@ -424,6 +443,8 @@ document.getElementById("nameList").innerHTML = ""; // Clear existing items
 	item.textContent = n;
 	item.onclick = () => {
 		if (!busy) {
+			audioCtx.resume();
+			playSound(buttonPress, 0.5);
 			const idx = includedNames.indexOf(n);
 			if (idx !== -1) {
 				if (includedNames.length > 1) {
@@ -451,12 +472,6 @@ document.getElementById("nameList").innerHTML = ""; // Clear existing items
 	wrapper.appendChild(iconContainer);
 	wrapper.appendChild(item);
 	document.getElementById("nameList").appendChild(wrapper);
-	
-	if (index === 0) {
-        icon.src = "images/selectorIconEnabled.png";
-        selectedIcon = icon;
-        selectedName = n;
-    }
 });
 
 // Check if user is hovering over the spin button
@@ -483,12 +498,15 @@ mainCanvas.addEventListener("click", e => {
 		if (busy || includedNames.length < 2) return;
 		audioCtx.resume();
 		busy = true;
+		spinLogged = false;
 		updateCursor(e);
 		wheelSpeed = Math.random()*0.8 + 0.4;
 		wheelFriction = Math.random()*0.01 + 0.982;
 		lastFrameTime = performance.now();
 		document.getElementById("downloadButton").disabled = true;
+		document.getElementById("screenshotButton").disabled = true;
 		document.getElementById("instructionsButton").disabled = true;
+		document.getElementById("simulateButton").disabled = true;
 		document.querySelectorAll("#nameList .nameItem").forEach(item => item.classList.add("disabled"));
 		document.querySelectorAll("#nameList .nameWrapper").forEach(wrapper => { // Disable icon pointers
 			const iconContainer = wrapper.querySelector(".iconContainer");
@@ -509,6 +527,176 @@ document.getElementById("instructionsButton").addEventListener("click", () => {
 });
 modal.addEventListener("click", (e) => {
 	modal.style.display = "none";
+});
+
+// Simulate wheel spins
+async function simulateSpins(duration) {
+
+	busy = true;
+	document.getElementById("downloadButton").disabled = true;
+	document.getElementById("screenshotButton").disabled = true;
+	document.getElementById("instructionsButton").disabled = true;
+	document.getElementById("simulateButton").disabled = true;
+	document.querySelectorAll("#nameList .nameItem").forEach(item => item.classList.add("disabled"));
+	document.querySelectorAll("#nameList .nameWrapper").forEach(wrapper => {
+		const iconContainer = wrapper.querySelector(".iconContainer");
+		const icon = wrapper.querySelector(".selectorIcon");
+		if (iconContainer) iconContainer.style.cursor = "default";
+		if (icon) icon.src = "images/selectorIconDisabled.png";
+	});
+
+	await new Promise(requestAnimationFrame);
+
+	const results = {};
+	includedNames.forEach(n => results[n] = 0);
+    const endTime = performance.now() + duration;
+    let iterations = 0;
+	const CHUNK_SIZE = 5000;
+	while (true) {
+		if (performance.now() >= endTime) break;
+		const winner = simulateSingleSpin();
+		results[winner]++;
+		iterations++;
+		if (iterations % CHUNK_SIZE === 0) {
+			await new Promise(requestAnimationFrame);
+		}
+	}
+	displaySimulationResults(results, iterations);
+	
+	document.getElementById("instructionsButton").disabled = false;
+	document.getElementById("simulateButton").disabled = false;
+	document.querySelectorAll("#nameList .nameItem").forEach(item => item.classList.remove("disabled"));
+	document.querySelectorAll("#nameList .nameWrapper").forEach(wrapper => {
+		const iconContainer = wrapper.querySelector(".iconContainer");
+		const icon = wrapper.querySelector(".selectorIcon");
+		const nameItem = wrapper.querySelector(".nameItem");
+		if (iconContainer) iconContainer.style.cursor = "pointer";
+		if (icon) {
+			if (nameItem && nameItem.textContent === selectedName) {
+				icon.src = "images/selectorIconEnabled.png";
+			} else {
+				icon.src = "images/selectorIconDisabled.png";
+			}
+		}
+	});
+	busy = false;
+	
+}
+
+function simulateSingleSpin() {
+    const localShuffled = [...includedNames];
+    for (let i = localShuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [localShuffled[i], localShuffled[j]] = [localShuffled[j], localShuffled[i]];
+    }
+
+    const weights = localShuffled.map(n => (n === selectedName ? 0.5 : 1));
+    const totalWeight = weights.reduce((a, b) => a + b, 0);
+    const segmentAngles = weights.map(w => TWO_PI * (w / totalWeight));
+    const segmentBoundaries = [];
+    let total = 0;
+    for (let seg of segmentAngles) {
+        total += seg;
+        segmentBoundaries.push(total);
+    }
+
+    let wheelSpeed = Math.random() * 0.8 + 0.4;
+    let wheelFriction = Math.random() * 0.01 + 0.982;
+    let wheelAngle = 0;
+    const fixedFrameTime = 1000 / 60; // 60fps
+    let frameMultiplier = 1;
+    while (wheelSpeed > 0.001) {
+        wheelSpeed *= Math.pow(wheelFriction, frameMultiplier);
+        wheelAngle = (wheelAngle + wheelSpeed * frameMultiplier) % TWO_PI;
+    }
+
+    const relativeAngle = (TWO_PI - wheelAngle) % TWO_PI;
+    let winningSegment = 0;
+    let low = 0;
+    let high = segmentBoundaries.length - 1;
+    while (low <= high) {
+        const mid = (low + high) >> 1;
+        if (relativeAngle <= segmentBoundaries[mid]) {
+            winningSegment = mid;
+            high = mid - 1;
+        } else {
+            low = mid + 1;
+        }
+    }
+
+    return localShuffled[winningSegment];
+}
+
+function displaySimulationResults(results, iterations) {
+    const modal = document.getElementById("simulationModal");
+    const body = document.getElementById("simulationResultsBody");
+    const canvas = document.getElementById("simulationChart");
+    const ctx = canvas.getContext("2d");
+
+    const sorted = Object.entries(results)
+        .map(([name, count]) => ({
+            name,
+            count,
+            pct: (count / iterations) * 100
+        }))
+        .sort((a, b) => b.pct - a.pct);
+
+    body.innerHTML = `<b>${iterations.toLocaleString()} Spins</b><br><br>`;
+
+    const padding = 40;
+    const chartWidth = canvas.width - padding * 2;
+    const chartHeight = canvas.height - padding * 2;
+    const maxPct = Math.max(...sorted.map(r => r.pct)) * 1.1;
+    const barWidth = chartWidth / sorted.length;
+    
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Draw axes
+    ctx.beginPath();
+    ctx.moveTo(padding, padding);
+    ctx.lineTo(padding, canvas.height - padding);
+    ctx.lineTo(canvas.width - padding, canvas.height - padding);
+    ctx.stroke();
+
+    sorted.forEach((r, i) => {
+        const barHeight = (r.pct / maxPct) * chartHeight;
+        const x = padding + i * barWidth;
+        const y = canvas.height - padding - barHeight;
+
+        // Find the index of the name in shuffledNames
+        const nameIndex = shuffledNames.indexOf(r.name);
+        const hue = Math.round((360 * nameIndex / shuffledNames.length) % 360);
+        ctx.fillStyle = `hsl(${hue}, 80%, 60%)`;
+
+        // Draw bar
+        ctx.fillRect(x + 5, y, barWidth - 10, barHeight);
+
+        // Name Label
+        ctx.save();
+        ctx.translate(x + barWidth / 2, canvas.height - padding + 14);
+        ctx.rotate(-Math.PI / 6);
+        ctx.textAlign = "right";
+        ctx.font = "12px monospace";
+        ctx.fillStyle = "black";
+        ctx.fillText(r.name, 0, 0);
+        ctx.restore();
+
+        // Percent Label
+        ctx.font = "12px monospace";
+        ctx.textAlign = "center";
+        ctx.fillText(r.pct.toFixed(1) + "%", x + barWidth / 2, y - 6);
+    });
+
+    modal.style.display = "flex";
+}
+
+document.getElementById("simulateButton").addEventListener("click", () => {
+    simulateSpins(2000);
+});
+
+const simModal = document.getElementById("simulationModal");
+simModal.addEventListener("click", () => {
+	simModal.style.display = "none";
 });
 
 // Setup recording
@@ -535,8 +723,26 @@ mediaRecorder.onstop = () => {
 		document.body.removeChild(a);
 	};
 	document.getElementById("downloadButton").disabled = false;
+	document.getElementById("screenshotButton").disabled = false;
 };
 
+document.getElementById("screenshotButton").addEventListener("click", () => {
+    const canvas = document.getElementById("mainCanvas");
+    canvas.toBlob(function(blob) {
+        const url = URL.createObjectURL(blob);
+        const today = new Date();
+        const year = today.getFullYear();
+        const month = String(today.getMonth() + 1).padStart(2, '0');
+        const day = String(today.getDate()).padStart(2, '0');
+        const filename = `Sporcle of the Day Selector ${year}-${month}-${day}.png`;
+
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+    });
+});
+
 drawWheelBase();
-
-
