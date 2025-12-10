@@ -317,7 +317,6 @@ function drawCanvas() {
 		mediaRecorder.stop();
 		updateCursor(lastMouseEvent);
 		document.getElementById("instructionsButton").disabled = false;
-		document.getElementById("simulateButton").disabled = false;
 		document.querySelectorAll("#nameList .nameItem").forEach(item => item.classList.remove("disabled"));
 		document.querySelectorAll("#nameList .nameWrapper").forEach(wrapper => {
 			const iconContainer = wrapper.querySelector(".iconContainer");
@@ -521,7 +520,6 @@ mainCanvas.addEventListener("click", e => {
 		document.getElementById("downloadButton").disabled = true;
 		document.getElementById("screenshotButton").disabled = true;
 		document.getElementById("instructionsButton").disabled = true;
-		document.getElementById("simulateButton").disabled = true;
 		document.querySelectorAll("#nameList .nameItem").forEach(item => item.classList.add("disabled"));
 		document.querySelectorAll("#nameList .nameWrapper").forEach(wrapper => { // Disable icon pointers
 			const iconContainer = wrapper.querySelector(".iconContainer");
