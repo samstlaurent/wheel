@@ -399,12 +399,25 @@ function playTick(volume = 1.0) {
 
 // Add controls for each name
 let selectedIcon = null, selectedName = null;
+
+// Load saved selectedName from localStorage
+const savedSelectedName = localStorage.getItem("selectedName");
+if (savedSelectedName) {
+	selectedName = savedSelectedName;
+	window.userName = selectedName;
+}
+
 document.getElementById("nameList").innerHTML = ""; // Clear existing items
 [...names].sort((a, b) => a.localeCompare(b)).forEach((n, index) => {
 
 	// The icon itself
 	const icon = document.createElement("img");
-	icon.src = "images/selectorIconDisabled.png";
+	if (n === selectedName) {
+		icon.src = "images/selectorIconEnabled.png";
+		selectedIcon = icon;
+	} else {
+		icon.src = "images/selectorIconDisabled.png";
+	}
 	icon.alt = "";
     icon.className = "selectorIcon";
 	icon.style.height = "24px";
@@ -426,11 +439,13 @@ document.getElementById("nameList").innerHTML = ""; // Clear existing items
 				icon.src = "images/selectorIconDisabled.png";
 				selectedIcon = null;
 				selectedName = null;
+				localStorage.removeItem("selectedName");
 			} else {
 				if (selectedIcon) selectedIcon.src = "images/selectorIconDisabled.png";
 				icon.src = "images/selectorIconEnabled.png";
 				selectedIcon = icon;
 				selectedName = n;
+				localStorage.setItem("selectedName", selectedName);
 			}
 			window.userName = selectedName;
 			drawWheelBase();
@@ -529,174 +544,14 @@ modal.addEventListener("click", (e) => {
 	modal.style.display = "none";
 });
 
-// Simulate wheel spins
-async function simulateSpins(duration) {
-
-	busy = true;
-	document.getElementById("downloadButton").disabled = true;
-	document.getElementById("screenshotButton").disabled = true;
-	document.getElementById("instructionsButton").disabled = true;
-	document.getElementById("simulateButton").disabled = true;
-	document.querySelectorAll("#nameList .nameItem").forEach(item => item.classList.add("disabled"));
-	document.querySelectorAll("#nameList .nameWrapper").forEach(wrapper => {
-		const iconContainer = wrapper.querySelector(".iconContainer");
-		const icon = wrapper.querySelector(".selectorIcon");
-		if (iconContainer) iconContainer.style.cursor = "default";
-		if (icon) icon.src = "images/selectorIconDisabled.png";
-	});
-
-	await new Promise(requestAnimationFrame);
-
-	const results = {};
-	includedNames.forEach(n => results[n] = 0);
-    const endTime = performance.now() + duration;
-    let iterations = 0;
-	const CHUNK_SIZE = 5000;
-	while (true) {
-		if (performance.now() >= endTime) break;
-		const winner = simulateSingleSpin();
-		results[winner]++;
-		iterations++;
-		if (iterations % CHUNK_SIZE === 0) {
-			await new Promise(requestAnimationFrame);
+// Auto-open instructions modal on first visit
+window.addEventListener("load", () => {
+	if (window.isFirstVisit) {
+		const modal = document.getElementById("instructionsModal");
+		if (modal) {
+			modal.style.display = "flex";
 		}
 	}
-	displaySimulationResults(results, iterations);
-	
-	document.getElementById("instructionsButton").disabled = false;
-	document.getElementById("simulateButton").disabled = false;
-	document.querySelectorAll("#nameList .nameItem").forEach(item => item.classList.remove("disabled"));
-	document.querySelectorAll("#nameList .nameWrapper").forEach(wrapper => {
-		const iconContainer = wrapper.querySelector(".iconContainer");
-		const icon = wrapper.querySelector(".selectorIcon");
-		const nameItem = wrapper.querySelector(".nameItem");
-		if (iconContainer) iconContainer.style.cursor = "pointer";
-		if (icon) {
-			if (nameItem && nameItem.textContent === selectedName) {
-				icon.src = "images/selectorIconEnabled.png";
-			} else {
-				icon.src = "images/selectorIconDisabled.png";
-			}
-		}
-	});
-	busy = false;
-	
-}
-
-function simulateSingleSpin() {
-    const localShuffled = [...includedNames];
-    for (let i = localShuffled.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [localShuffled[i], localShuffled[j]] = [localShuffled[j], localShuffled[i]];
-    }
-
-    const weights = localShuffled.map(n => (n === selectedName ? 0.5 : 1));
-    const totalWeight = weights.reduce((a, b) => a + b, 0);
-    const segmentAngles = weights.map(w => TWO_PI * (w / totalWeight));
-    const segmentBoundaries = [];
-    let total = 0;
-    for (let seg of segmentAngles) {
-        total += seg;
-        segmentBoundaries.push(total);
-    }
-
-    let wheelSpeed = Math.random() * 0.8 + 0.4;
-    let wheelFriction = Math.random() * 0.01 + 0.982;
-    let wheelAngle = 0;
-    const fixedFrameTime = 1000 / 60; // 60fps
-    let frameMultiplier = 1;
-    while (wheelSpeed > 0.001) {
-        wheelSpeed *= Math.pow(wheelFriction, frameMultiplier);
-        wheelAngle = (wheelAngle + wheelSpeed * frameMultiplier) % TWO_PI;
-    }
-
-    const relativeAngle = (TWO_PI - wheelAngle) % TWO_PI;
-    let winningSegment = 0;
-    let low = 0;
-    let high = segmentBoundaries.length - 1;
-    while (low <= high) {
-        const mid = (low + high) >> 1;
-        if (relativeAngle <= segmentBoundaries[mid]) {
-            winningSegment = mid;
-            high = mid - 1;
-        } else {
-            low = mid + 1;
-        }
-    }
-
-    return localShuffled[winningSegment];
-}
-
-function displaySimulationResults(results, iterations) {
-    const modal = document.getElementById("simulationModal");
-    const body = document.getElementById("simulationResultsBody");
-    const canvas = document.getElementById("simulationChart");
-    const ctx = canvas.getContext("2d");
-
-    const sorted = Object.entries(results)
-        .map(([name, count]) => ({
-            name,
-            count,
-            pct: (count / iterations) * 100
-        }))
-        .sort((a, b) => b.pct - a.pct);
-
-    body.innerHTML = `<b>${iterations.toLocaleString()} Spins</b><br><br>`;
-
-    const padding = 40;
-    const chartWidth = canvas.width - padding * 2;
-    const chartHeight = canvas.height - padding * 2;
-    const maxPct = Math.max(...sorted.map(r => r.pct)) * 1.1;
-    const barWidth = chartWidth / sorted.length;
-    
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    // Draw axes
-    ctx.beginPath();
-    ctx.moveTo(padding, padding);
-    ctx.lineTo(padding, canvas.height - padding);
-    ctx.lineTo(canvas.width - padding, canvas.height - padding);
-    ctx.stroke();
-
-    sorted.forEach((r, i) => {
-        const barHeight = (r.pct / maxPct) * chartHeight;
-        const x = padding + i * barWidth;
-        const y = canvas.height - padding - barHeight;
-
-        // Find the index of the name in shuffledNames
-        const nameIndex = shuffledNames.indexOf(r.name);
-        const hue = Math.round((360 * nameIndex / shuffledNames.length) % 360);
-        ctx.fillStyle = `hsl(${hue}, 80%, 60%)`;
-
-        // Draw bar
-        ctx.fillRect(x + 5, y, barWidth - 10, barHeight);
-
-        // Name Label
-        ctx.save();
-        ctx.translate(x + barWidth / 2, canvas.height - padding + 14);
-        ctx.rotate(-Math.PI / 6);
-        ctx.textAlign = "right";
-        ctx.font = "12px monospace";
-        ctx.fillStyle = "black";
-        ctx.fillText(r.name, 0, 0);
-        ctx.restore();
-
-        // Percent Label
-        ctx.font = "12px monospace";
-        ctx.textAlign = "center";
-        ctx.fillText(r.pct.toFixed(1) + "%", x + barWidth / 2, y - 6);
-    });
-
-    modal.style.display = "flex";
-}
-
-document.getElementById("simulateButton").addEventListener("click", () => {
-    simulateSpins(2000);
-});
-
-const simModal = document.getElementById("simulationModal");
-simModal.addEventListener("click", () => {
-	simModal.style.display = "none";
 });
 
 // Setup recording

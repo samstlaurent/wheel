@@ -29,6 +29,16 @@
 		const auth = getAuth(app);
 		const analytics = getAnalytics(app);
 		
+		let localUserId = localStorage.getItem("localUserId");
+		let isFirstVisit = false;
+
+		if (!localUserId) {
+			localUserId = crypto.randomUUID();
+			localStorage.setItem("localUserId", localUserId);
+			isFirstVisit = true;
+		}
+		window.isFirstVisit = isFirstVisit;
+		
 		signInAnonymously(auth).catch(err => console.error("Auth error:", err));
 		
 		let currentUserId = null;
@@ -40,7 +50,7 @@
 			try {
 				await addDoc(collection(db, "wheelSpins"), {
 					winner: spinResult,
-					userId: currentUserId || "unknown",
+					userId: localUserId || "unknown",
 					userName: window.userName || "unknown",
 					timestamp: serverTimestamp()
 				});
@@ -53,7 +63,6 @@
 	<canvas id="mainCanvas" width="800" height="600"></canvas>
 	<div id="nameList"></div>
 	<button id="instructionsButton">Instructions</button>
-	<button id="simulateButton">Simulate</button>
 	<button id="downloadButton" disabled>Download Video</button>
 	<button id="screenshotButton" disabled>Download Screenshot</button>
 
@@ -74,14 +83,6 @@
 		</div>
 	</div>
 	
-	<div id="simulationModal">
-		<div id="simulationContent">
-			<h2>Simulation Results</h2>
-			<div id="simulationResultsBody" style="margin-top: 10px;"></div>
-			<canvas id="simulationChart" width="600" height="300"></canvas>
-		</div>
-	</div>
-
 	<audio id="wheelTick" src="https://raw.githubusercontent.com/samstlaurent/wheel/main/audio/wheelTick.mp3" crossorigin=""></audio>
 	<audio id="wheelStopNeutral" src="https://raw.githubusercontent.com/samstlaurent/wheel/main/audio/wheelStopNeutral.mp3" crossorigin=""></audio>
 	<audio id="wheelStopParty" src="https://raw.githubusercontent.com/samstlaurent/wheel/main/audio/wheelStopParty.mp3" crossorigin=""></audio>
