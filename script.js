@@ -54,10 +54,19 @@ function drawWheelBase() {
     let startAngle = 0;
     shuffledNames.forEach((n, i) => {
         const segArc = segmentAngles[i];
-        const hue = Math.round((360 * i / shuffledNames.length) % 360);
 
         // Draw segment
-        wheelCtx.fillStyle = `hsl(${hue}, 80%, 60%)`;
+        let fillStyle;
+
+		if (colorMode === "hue") {
+			const hue = Math.round((360 * i / shuffledNames.length) % 360);
+			fillStyle = `hsl(${hue}, 80%, 60%)`;
+		} else if (colorMode === "lightness") {
+			const light = 25 + 75 * (i / shuffledNames.length);  
+			fillStyle = `hsl(${baseHue}, 80%, ${light}%)`;
+		}
+
+		wheelCtx.fillStyle = fillStyle;
         wheelCtx.beginPath();
         wheelCtx.moveTo(canvasCenterX, canvasCenterY);
         wheelCtx.arc(canvasCenterX, canvasCenterY, wheelRadius, startAngle, startAngle + segArc, false);
@@ -514,8 +523,8 @@ mainCanvas.addEventListener("click", e => {
 		busy = true;
 		spinLogged = false;
 		updateCursor(e);
-		wheelSpeed = Math.random()*0.8 + 0.4;
-		wheelFriction = Math.random()*0.01 + 0.982;
+		wheelSpeed = Math.random()*4.5 + 0.5;
+		wheelFriction = Math.random()*0.02 + 0.97; // prev 0.982 - 0.992 new 0.97 - 0.99
 		lastFrameTime = performance.now();
 		document.getElementById("downloadButton").disabled = true;
 		document.getElementById("screenshotButton").disabled = true;
@@ -551,6 +560,44 @@ window.addEventListener("load", () => {
 		}
 	}
 });
+
+document.getElementById("optionsButton").onclick = () => {
+    document.getElementById("optionsModal").style.display = "flex";
+};
+
+document.getElementById("optionsModal").onclick = (e) => {
+    if (e.target === e.currentTarget) {
+        e.currentTarget.style.display = "none";
+    }
+};
+
+let colorMode = localStorage.getItem("colorMode") || "hue";
+let baseHue = Number(localStorage.getItem("baseHue")) || 200;
+document.getElementById("hueSlider").value = baseHue;
+document.querySelector(`input[name="colorMode"][value="${colorMode}"]`).checked = true;
+document.querySelectorAll('input[name="colorMode"]').forEach(radio => {
+    radio.onchange = () => {
+        colorMode = radio.value;
+        localStorage.setItem("colorMode", colorMode);
+		updateOptionsUI();
+        drawWheelBase();
+    };
+});
+document.getElementById("hueSlider").oninput = (e) => {
+    baseHue = Number(e.target.value);
+    localStorage.setItem("baseHue", baseHue);
+    drawWheelBase();
+};
+
+function updateOptionsUI() {
+    const hueSlider = document.getElementById("hueSlider");
+
+    hueSlider.style.display = (colorMode === "lightness")
+        ? "block"
+        : "none";
+}
+
+updateOptionsUI();
 
 // Setup recording
 const videoStream = mainCanvas.captureStream(60);

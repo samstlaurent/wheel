@@ -5,12 +5,98 @@ body {
 	user-select: none;
 }
 
+#recentSpinsContainer {
+    position: absolute;
+    margin-top: 20px;
+    right: calc(50% + 410px);
+    width: fit-content;
+	max-width: 200px;
+    height: 580px;
+    background: white;
+    padding: 10px;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.25);
+    text-align: left;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+#recentSpinsContainer h3 {
+    margin: 0 0 5px 0;
+    text-align: center;
+    font-weight: normal;
+    flex: 0 0 auto;
+}
+
+#recentSpinsTable {
+    width: max-content;
+    border-collapse: collapse;
+    font-size: 12px;
+    display: block;
+}
+
+#recentSpinsTable tbody {
+    display: block;
+    max-height: 550px;
+    overflow-y: auto;
+}
+
+#recentSpinsTable td {
+    padding: 4px;
+    border-bottom: 1px solid #ddd;
+    white-space: nowrap;
+    box-sizing: border-box;
+}
+
+#recentSpinsTable .fake-header td {
+    position: sticky;
+    top: 0;
+    background-color: #eee;
+    font-weight: bold;
+    z-index: 1;
+}
+
 #mainCanvas {
 	margin-top: 20px;
 	background: white;
 	border-radius: 10px;
 	box-shadow: 0 0 10px rgba(0,0,0,0.3);
 }
+
+#buttonColumn {
+	position: absolute;
+	top: 25px;
+	left: calc(50% + 410px);
+	display: flex;
+	flex-direction: column;
+}
+
+#buttonColumn button {
+	width: 200px;
+}
+
+button {
+	font-size: 15px;
+	margin: 2px;
+	padding: 8px;
+	border: none;
+	border-radius: 8px;
+	cursor: pointer;
+	color: white;
+}
+
+#buttonColumn button:disabled,
+button:disabled {
+    background: #ccc !important;
+    cursor: default;
+    color: white !important;
+}
+
+#instructionsButton { background: #4ba3f2; }
+#optionsButton { background: #4ba3f2; }
+#downloadButton,
+#screenshotButton { background: #bc2f49; }
 
 #nameList {
 	margin: 20px;
@@ -28,69 +114,15 @@ body {
 	cursor: pointer;
 }
 
-.excluded {
-	background: #ad00a0;
-}
-
-.disabled {
-	background: #ccc;
-	cursor: default;
-}
-
-#downloadButton {
-	font-size: 15px;
-	background: #bc2f49;
-	color: white;
-	margin: 2px;
-	padding: 8px;
-	border: none;
-	border-radius: 8px;
-	cursor: pointer;
-}
-
-#downloadButton:disabled {
-	background: #ccc;
-	cursor: default;
-}
-
-#screenshotButton {
-    font-size: 15px;
-    background: #bc2f49;
-    color: white;
-    margin: 2px;
-    padding: 8px;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-}
-
-#screenshotButton:disabled {
-    background: #ccc;
-    cursor: default;
-}
+.excluded { background: #ad00a0; }
+.disabled { background: #ccc; cursor: default; }
 
 .iconContainer {
-    width: 100%;
-    display: flex;
-    justify-content: center;
-    margin-bottom: 4px;
-    cursor: pointer;
-}
-
-#instructionsButton {
-	font-size: 15px;
-	background: #89CFF0;
-	color: white;
-	margin: 2px;
-	padding: 8px;
-	border: none;
-	border-radius: 8px;
+	width: 100%;
+	display: flex;
+	justify-content: center;
+	margin-bottom: 4px;
 	cursor: pointer;
-}
-
-#instructionsButton:disabled {
-	background: #ccc;
-	cursor: default;
 }
 
 #instructionsModal {
@@ -113,32 +145,67 @@ body {
 }
 
 .instructionLine {
-    display: block;
+	display: block;
 }
 
 .instructionsInlineIcon {
-    vertical-align: middle;
-    height: 24px;
+	vertical-align: middle;
+	height: 24px;
 }
 
-.instructionsInlineNameButton {
-	display: inline-block;
-    vertical-align: middle;
-    font-size: inherit;
-	background: #76a526;
-	color: white;
-	padding: 8px;
-	border: none;
-	border-radius: 8px;
-}
-
+.instructionsInlineNameButton,
 .instructionsInlineDownloadButton {
 	display: inline-block;
-    vertical-align: middle;
-    font-size: inherit;
-	background: #bc2f49;
-	color: white;
+	vertical-align: middle;
+	font-size: inherit;
 	padding: 8px;
 	border: none;
 	border-radius: 8px;
+	color: white;
+}
+
+.instructionsInlineNameButton { background: #76a526; }
+.instructionsInlineDownloadButton { background: #bc2f49; }
+
+#optionsModal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.6);
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+#optionsContent {
+    background: white;
+    padding: 10px;
+    border-radius: 10px;
+    width: 300px;
+}
+
+.optionRow {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 8px 0;
+    cursor: pointer;
+}
+
+.optionRow--withSlider input[type="range"] {
+	flex: 1;
+	max-width: 120px;
+	margin-left: auto;
+}
+
+#hueSettings {
+    background: #f4f4f4;
+    padding: 10px;
+    border-radius: 8px;
+}
+#hueSettings input[type="range"] {
+    width: 100%;
 }
