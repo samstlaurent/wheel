@@ -13,7 +13,7 @@ let names = [];
 if (month == 4 && day == 1) {
 	names = ["Sam", "Sam", "Sam", "Sam", "Sam", "Sam", "Sam", "Sam", "Sam", "Sam", "Sam", "Sam", "Sam"];
 } else {
-	names = ["Aaron D", "Aaron E", "Andrea", "Jasmine", "Jayden", "Jessica", "Jonathan", "Josey", "Lauren", "Michelle", "Quintin", "Sam", "Victoria"];
+	names = ["Aaron D", "Aaron E", "Andrea", "Jasmine", "Jayden", "Jessica", "Josey", "Lauren", "Michelle", "Quintin", "Sam", "Victoria"];
 }
 
 let includedNames = [...names];
@@ -646,3 +646,4 @@ document.getElementById("screenshotButton").addEventListener("click", () => {
 });
 
 drawWheelBase();
+
