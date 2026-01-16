@@ -10,7 +10,7 @@
 
 	<script type="module">
 		import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
-		import { getFirestore, collection, doc, setDoc, serverTimestamp, query, orderBy, limit, onSnapshot } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
+		import { getFirestore, collection, doc, setDoc, serverTimestamp, query, orderBy, limit, onSnapshot, getDocs } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
 		import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-analytics.js";
 		import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";
 
@@ -59,6 +59,74 @@
 				});
 			} catch (err) {
 				console.error("Firebase log error:", err);
+			}
+		};
+		
+		let statsChart = null; // Keep a reference so we can update the chart
+
+		window.logWinnerFrequencyFromFirestore = async function (limitCount = 1000) {
+			try {
+				const spinsRef = collection(db, "wheelSpins");
+				const q = query(
+					spinsRef,
+					orderBy("timestamp", "desc"),
+					limit(limitCount)
+				);
+
+				const snapshot = await getDocs(q);
+
+				// Initialize all names with zero in original order
+				const counts = {};
+				names.forEach(name => counts[name] = 0);
+
+				// Count actual wins
+				snapshot.forEach(doc => {
+					const winner = doc.data().winner;
+					if (!winner) return;
+					if (!(winner in counts)) counts[winner] = 0;
+					counts[winner]++;
+				});
+
+				// Prepare labels and data in wheel/button order
+				const labels = [...names];              // original wheel order
+				const data = labels.map(name => counts[name] || 0);
+
+				// Render / update chart
+				const ctx = document.getElementById("statsChart").getContext("2d");
+
+				if (statsChart) {
+					statsChart.data.labels = labels;
+					statsChart.data.datasets[0].data = data;
+					statsChart.update();
+				} else {
+					statsChart = new Chart(ctx, {
+						type: 'bar',
+						data: {
+							labels: labels,
+							datasets: [{
+								label: 'Wins',
+								data: data,
+								backgroundColor: '#4ba3f2'
+							}]
+						},
+						options: {
+							responsive: true,
+							plugins: {
+								legend: { display: false },
+								tooltip: { mode: 'index', intersect: false }
+							},
+							scales: {
+								y: {
+									beginAtZero: true,
+									ticks: { stepSize: 1 }
+								}
+							}
+						}
+					});
+				}
+
+			} catch (err) {
+				console.error("Failed to fetch winner stats:", err);
 			}
 		};
 		
@@ -125,6 +193,9 @@
 		<table id="recentSpinsTable">
 			<tbody id="recentSpinsBody"></tbody>
 		</table>
+		<div id="recentSpinsFooter">
+			<button id="statsButton">Show Graph</button>
+		</div>
 	</div>
 
 	<canvas id="mainCanvas" width="800" height="600"></canvas>
@@ -174,6 +245,14 @@
 					style="display:none;"
 				/>
 			</label>
+		</div>
+	</div>
+	
+	<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+	<div id="statsModal">
+		<div id="statsContent">
+			<h3>Winner Frequency</h3>
+			<canvas id="statsChart" width="350" height="250"></canvas>
 		</div>
 	</div>
 	

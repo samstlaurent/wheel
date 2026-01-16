@@ -36,9 +36,24 @@ body {
     display: block;
 }
 
+#recentSpinsTable {
+	flex: 1 1 auto;
+}
+
+#recentSpinsFooter {
+	flex: 0 0 auto;
+	margin-top: 6px;
+	text-align: center;
+}
+
+#recentSpinsFooter button {
+	width: 100%;
+	background: #4ba3f2;
+}
+
 #recentSpinsTable tbody {
     display: block;
-    max-height: 550px;
+    max-height: 100%;
     overflow-y: auto;
 }
 
@@ -206,6 +221,29 @@ button:disabled {
     padding: 10px;
     border-radius: 8px;
 }
+
 #hueSettings input[type="range"] {
     width: 100%;
+}
+
+#statsModal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.6);
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+#statsContent {
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    width: 400px;
+    max-width: 90%;
+    text-align: center;
 }

@@ -57,12 +57,14 @@ function drawWheelBase() {
 
         // Draw segment
         let fillStyle;
+		let light;
 
 		if (colorMode === "hue") {
 			const hue = Math.round((360 * i / shuffledNames.length) % 360);
-			fillStyle = `hsl(${hue}, 80%, 60%)`;
+			light = 60;
+			fillStyle = `hsl(${hue}, 80%, ${light}%)`;
 		} else if (colorMode === "lightness") {
-			const light = 25 + 75 * (i / shuffledNames.length);  
+			light = 25 + 75 * (i / shuffledNames.length);  
 			fillStyle = `hsl(${baseHue}, 80%, ${light}%)`;
 		}
 
@@ -79,7 +81,7 @@ function drawWheelBase() {
         wheelCtx.rotate(startAngle + segArc / 2);
         wheelCtx.textAlign = "right";
         wheelCtx.textBaseline = "middle";
-        wheelCtx.fillStyle = "black";
+        wheelCtx.fillStyle = light < 40 ? "white" : "black";
         wheelCtx.font = "16px Arial";
         wheelCtx.fillText(n, wheelRadius - 10, 0);
         wheelCtx.restore();
@@ -561,6 +563,21 @@ window.addEventListener("load", () => {
 	}
 });
 
+const statsModal = document.getElementById("statsModal");
+const statsButton = document.getElementById("statsButton");
+
+statsButton.onclick = () => {
+    logWinnerFrequencyFromFirestore(1000);
+    statsModal.style.display = "flex";
+};
+
+// Close when clicking outside content
+statsModal.onclick = (e) => {
+    if (e.target === e.currentTarget) {
+        statsModal.style.display = "none";
+    }
+};
+
 document.getElementById("optionsButton").onclick = () => {
     document.getElementById("optionsModal").style.display = "flex";
 };
@@ -591,10 +608,7 @@ document.getElementById("hueSlider").oninput = (e) => {
 
 function updateOptionsUI() {
     const hueSlider = document.getElementById("hueSlider");
-
-    hueSlider.style.display = (colorMode === "lightness")
-        ? "block"
-        : "none";
+    hueSlider.style.display = (colorMode === "lightness") ? "block" : "none";
 }
 
 updateOptionsUI();
