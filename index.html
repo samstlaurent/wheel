@@ -63,6 +63,7 @@
 		};
 		
 		let statsChart = null; // Keep a reference so we can update the chart
+		window.currentChartType = 'bar'; // Track current chart type
 
 		window.logWinnerFrequencyFromFirestore = async function (limitCount = 1000) {
 			try {
@@ -91,39 +92,71 @@
 				const labels = [...names];              // original wheel order
 				const data = labels.map(name => counts[name] || 0);
 
+				// Get colors matching the wheel colors - use nameColorMap if available
+				const colors = labels.map((name) => {
+					// Try to get color from the nameColorMap that was set when wheel was drawn
+					if (window.nameColorMap && window.nameColorMap[name]) {
+						return window.nameColorMap[name];
+					}
+					
+					// Fallback to calculating color based on position in original array
+					const i = labels.indexOf(name);
+					const colorMode = window.colorMode || localStorage.getItem("colorMode") || "hue";
+					const baseHue = window.baseHue || Number(localStorage.getItem("baseHue")) || 200;
+					
+					if (colorMode === "hue") {
+						const hue = Math.round((360 * i / labels.length) % 360);
+						return `hsl(${hue}, 80%, 60%)`;
+					} else if (colorMode === "lightness") {
+						const light = 25 + 75 * (i / labels.length);
+						return `hsl(${baseHue}, 80%, ${light}%)`;
+					}
+				});
+
 				// Render / update chart
 				const ctx = document.getElementById("statsChart").getContext("2d");
 
 				if (statsChart) {
-					statsChart.data.labels = labels;
-					statsChart.data.datasets[0].data = data;
-					statsChart.update();
-				} else {
-					statsChart = new Chart(ctx, {
-						type: 'bar',
-						data: {
-							labels: labels,
-							datasets: [{
-								label: 'Wins',
-								data: data,
-								backgroundColor: '#4ba3f2'
-							}]
-						},
-						options: {
-							responsive: true,
-							plugins: {
-								legend: { display: false },
-								tooltip: { mode: 'index', intersect: false }
+					statsChart.destroy(); // Destroy existing chart before creating new one
+				}
+				
+				const chartConfig = {
+					type: window.currentChartType,
+					data: {
+						labels: labels,
+						datasets: [{
+							label: 'Wins',
+							data: data,
+							backgroundColor: colors
+						}]
+					},
+					options: {
+						responsive: true,
+						animation: false,
+						plugins: {
+							legend: { 
+								display: window.currentChartType === 'pie',
+								position: 'right'
 							},
-							scales: {
-								y: {
-									beginAtZero: true,
-									ticks: { stepSize: 1 }
-								}
+							tooltip: { 
+								mode: window.currentChartType === 'pie' ? 'nearest' : 'index',
+								intersect: window.currentChartType === 'pie'
 							}
 						}
-					});
+					}
+				};
+
+				// Add specific options for bar chart
+				if (window.currentChartType === 'bar') {
+					chartConfig.options.scales = {
+						y: {
+							beginAtZero: true,
+							ticks: { stepSize: 1 }
+						}
+					};
 				}
+
+				statsChart = new Chart(ctx, chartConfig);
 
 			} catch (err) {
 				console.error("Failed to fetch winner stats:", err);
@@ -252,6 +285,10 @@
 	<div id="statsModal">
 		<div id="statsContent">
 			<h3>Winner Frequency</h3>
+			<div id="chartTypeToggle" style="margin-bottom: 10px;">
+				<button id="barChartBtn" class="chartTypeBtn active" style="background: #4ba3f2; margin: 2px; padding: 6px 12px; border: none; border-radius: 6px; cursor: pointer; color: white;">Bar Chart</button>
+				<button id="pieChartBtn" class="chartTypeBtn" style="background: #999; margin: 2px; padding: 6px 12px; border: none; border-radius: 6px; cursor: pointer; color: white;">Pie Chart</button>
+			</div>
 			<canvas id="statsChart" width="350" height="250"></canvas>
 		</div>
 	</div>
@@ -265,5 +302,3 @@
 	<script src="script.js"></script>
 </body>
 </html>
-
-

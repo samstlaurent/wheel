@@ -24,6 +24,11 @@ let busy = false, lastFrameTime = 0, lastTickTime = 0;
 let winningSegment = 0, previousWinningSegment = 0, arrowDeflection = 0;
 let segmentAngles = [], segmentBoundaries = [];;
 
+// Initialize currentChartType on window if not already set
+if (typeof window.currentChartType === 'undefined') {
+	window.currentChartType = 'bar';
+}
+
 const wheelTick = document.getElementById("wheelTick");
 const wheelStopNeutral = document.getElementById("wheelStopNeutral");
 const wheelStopParty = document.getElementById("wheelStopParty");
@@ -50,6 +55,9 @@ function drawWheelBase() {
     // Compute angles for each segment and store in segmentAngles
     segmentAngles = weights.map(w => TWO_PI * (w / totalWeight));
 
+	// Create a color map for the graph to use
+	window.nameColorMap = {};
+
     // Draw each segment
     let startAngle = 0;
     shuffledNames.forEach((n, i) => {
@@ -67,6 +75,9 @@ function drawWheelBase() {
 			light = 25 + 75 * (i / shuffledNames.length);  
 			fillStyle = `hsl(${baseHue}, 80%, ${light}%)`;
 		}
+
+		// Store the color for this name
+		window.nameColorMap[n] = fillStyle;
 
 		wheelCtx.fillStyle = fillStyle;
         wheelCtx.beginPath();
@@ -571,6 +582,21 @@ statsButton.onclick = () => {
     statsModal.style.display = "flex";
 };
 
+// Chart type toggle functionality
+document.getElementById("barChartBtn").onclick = function() {
+	window.currentChartType = 'bar';
+	document.getElementById("barChartBtn").style.background = '#4ba3f2';
+	document.getElementById("pieChartBtn").style.background = '#999';
+	logWinnerFrequencyFromFirestore(1000);
+};
+
+document.getElementById("pieChartBtn").onclick = function() {
+	window.currentChartType = 'pie';
+	document.getElementById("pieChartBtn").style.background = '#4ba3f2';
+	document.getElementById("barChartBtn").style.background = '#999';
+	logWinnerFrequencyFromFirestore(1000);
+};
+
 // Close when clicking outside content
 statsModal.onclick = (e) => {
     if (e.target === e.currentTarget) {
@@ -660,4 +686,3 @@ document.getElementById("screenshotButton").addEventListener("click", () => {
 });
 
 drawWheelBase();
-
