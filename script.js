@@ -498,17 +498,45 @@ document.getElementById("nameList").innerHTML = ""; // Clear existing items
 		}
 	};
 
-	// Wrapper that holds icon + button
+	// Wrapper that holds icon + button + streak badge
 	const wrapper = document.createElement("div");
     wrapper.className = "nameWrapper";
+	wrapper.dataset.name = n;
 	wrapper.style.display = "inline-flex";
 	wrapper.style.flexDirection = "column";
 	wrapper.style.alignItems = "center";
 	wrapper.style.margin = "4px";
 	wrapper.appendChild(iconContainer);
 	wrapper.appendChild(item);
+
+	const badge = document.createElement("div");
+	badge.className = "streakBadge";
+	badge.style.display = "none";
+	wrapper.appendChild(badge);
+
 	document.getElementById("nameList").appendChild(wrapper);
 });
+
+// Show a losing-streak badge under whoever hasn't been picked the longest
+window.updateStreakIndicators = function (streaks) {
+	let maxStreak = 0;
+	for (const count of Object.values(streaks)) {
+		if (count > maxStreak) maxStreak = count;
+	}
+
+	document.querySelectorAll("#nameList .nameWrapper").forEach(wrapper => {
+		const badge = wrapper.querySelector(".streakBadge");
+		if (!badge) return;
+		const streak = streaks[wrapper.dataset.name] || 0;
+
+		if (streak >= 2 && streak === maxStreak) {
+			badge.textContent = `❄️${streak}`;
+			badge.style.display = "block";
+		} else {
+			badge.style.display = "none";
+		}
+	});
+};
 
 // Check if user is hovering over the spin button
 let lastMouseEvent = null;

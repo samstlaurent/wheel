@@ -215,6 +215,29 @@
 					`;
 					tbody.appendChild(row);
 				});
+
+				// --- Compute "spins since last win" for each name ---
+				// Snapshot is desc by timestamp, so we just count how deep we
+				// have to go before we first see each name as a winner.
+				const lastWinAt = {};   // name -> index of their most-recent win
+				let spinIndex = 0;
+				snapshot.forEach(doc => {
+					const winner = doc.data().winner;
+					if (winner && !(winner in lastWinAt)) {
+						lastWinAt[winner] = spinIndex;
+					}
+					spinIndex++;
+				});
+				// Build the final map: spins since last win.
+				// Names never seen get the total count (they've never won).
+				const streaks = {};
+				names.forEach(name => {
+					streaks[name] = (name in lastWinAt) ? lastWinAt[name] : spinIndex;
+				});
+
+				if (typeof window.updateStreakIndicators === 'function') {
+					window.updateStreakIndicators(streaks);
+				}
 			});
 		}
 

@@ -134,6 +134,14 @@ button:disabled {
 .excluded { background: #ad00a0; }
 .disabled { background: #ccc; cursor: default; }
 
+.streakBadge {
+	margin-top: 4px;
+	font-size: 16px;
+	color: #4BCCFA;
+	font-weight: bold;
+	white-space: nowrap;
+}
+
 .iconContainer {
 	width: 100%;
 	display: flex;
