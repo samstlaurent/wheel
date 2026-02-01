@@ -38,6 +38,8 @@ body {
 
 #recentSpinsTable {
 	flex: 1 1 auto;
+	min-height: 0;
+	overflow: hidden;
 }
 
 #recentSpinsFooter {
@@ -53,7 +55,7 @@ body {
 
 #recentSpinsTable tbody {
     display: block;
-    max-height: 100%;
+    height: 100%;
     overflow-y: auto;
 }
 
