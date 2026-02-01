@@ -140,7 +140,7 @@ function drawCanvas() {
 			if (!spinLogged && window.firebaseAddSpin) {
 				spinLogged = true;
 				const winner = shuffledNames[winningSegment];
-				window.firebaseAddSpin(winner);
+				window.firebaseAddSpin(winner, [...includedNames]);
 			}
 			
 			const randomNumber = Math.random();

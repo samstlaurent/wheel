@@ -10,7 +10,7 @@
 
 	<script type="module">
 		import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
-		import { getFirestore, collection, doc, setDoc, serverTimestamp, query, orderBy, limit, onSnapshot, getDocs } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
+		import { getFirestore, collection, doc, setDoc, serverTimestamp, query, orderBy, limit, onSnapshot, getDocs, deleteDoc } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
 		import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-analytics.js";
 		import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";
 
@@ -26,6 +26,7 @@
 
 		const app = initializeApp(firebaseConfig);
 		const db = getFirestore(app);
+
 		const auth = getAuth(app);
 		const analytics = getAnalytics(app);
 		
@@ -46,13 +47,14 @@
 			if (user) currentUserId = user.uid;
 		});
 		
-		window.firebaseAddSpin = async function (spinResult) {
+		window.firebaseAddSpin = async function (spinResult, activeNames) {
 			try {
 				const now = new Date();
-				const docId = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')} ${now.getHours()}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}`;
+				const docId = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}`;
 
 				await setDoc(doc(db, "wheelSpins", docId), {
 					winner: spinResult,
+					activeNames: activeNames || [],
 					userId: localUserId || "unknown",
 					userName: window.userName || "unknown",
 					timestamp: serverTimestamp()
@@ -167,15 +169,10 @@
 			const year = date.getFullYear();
 			const month = String(date.getMonth() + 1).padStart(2, '0');
 			const day = String(date.getDate()).padStart(2, '0');
-
-			let hours = date.getHours();
+			const hours = String(date.getHours()).padStart(2, '0');
 			const minutes = String(date.getMinutes()).padStart(2, '0');
-			const ampm = hours >= 12 ? 'PM' : 'AM';
-			
-			hours = hours % 12;
-			if (hours === 0) hours = 12; // convert 0 to 12 for 12-hour format
 
-			return `${year}-${month}-${day} ${hours}:${minutes} ${ampm}`;
+			return `${year}-${month}-${day} ${hours}:${minutes}`;
 		}
 		
 		function subscribeToRecentSpins() {
@@ -219,20 +216,36 @@
 				// --- Compute "spins since last win" for each name ---
 				// Snapshot is desc by timestamp, so we just count how deep we
 				// have to go before we first see each name as a winner.
-				const lastWinAt = {};   // name -> index of their most-recent win
-				let spinIndex = 0;
-				snapshot.forEach(doc => {
-					const winner = doc.data().winner;
-					if (winner && !(winner in lastWinAt)) {
-						lastWinAt[winner] = spinIndex;
-					}
-					spinIndex++;
-				});
-				// Build the final map: spins since last win.
-				// Names never seen get the total count (they've never won).
 				const streaks = {};
+
+				// Convert snapshot to array so we can iterate multiple times
+				const spinDocs = [];
+				snapshot.forEach(doc => spinDocs.push(doc.data()));
+
 				names.forEach(name => {
-					streaks[name] = (name in lastWinAt) ? lastWinAt[name] : spinIndex;
+					let count = 0;
+					let foundWin = false;
+
+					for (const spin of spinDocs) {
+						const active = spin.activeNames || [];
+						const winner = spin.winner;
+
+						// If this spin did not include the name, ignore it entirely
+						if (!active.includes(name)) {
+							continue;
+						}
+
+						// If this spin WAS eligible for them, count it
+						if (winner === name) {
+							foundWin = true;
+							break;
+						}
+
+						count++;
+					}
+
+					// If they never won in the dataset, count equals total eligible spins
+					streaks[name] = foundWin ? count : count;
 				});
 
 				if (typeof window.updateStreakIndicators === 'function') {
