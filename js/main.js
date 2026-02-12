@@ -1,7 +1,8 @@
 import {
 	isFirstVisit,
 	addSpin,
-	subscribeToRecentSpins
+	subscribeToRecentSpins,
+	getWinnerStats
 } from './firebase.js';
 
 import {
@@ -42,13 +43,14 @@ let shuffledNames = [...includedNames];
 let wheelAngle = 0, wheelSpeed = 0, wheelFriction = 0;
 let busy = false, lastFrameTime = 0, lastTickTime = 0;
 let winningSegment = 0, previousWinningSegment = 0, arrowDeflection = 0;
-let segmentAngles = [], segmentBoundaries = [];;
+let segmentAngles = [], segmentBoundaries = [];
 
 const wheelTick = document.getElementById("wheelTick");
 const wheelStopNeutral = document.getElementById("wheelStopNeutral");
 const wheelStopParty = document.getElementById("wheelStopParty");
 const wheelStopSpectacle = document.getElementById("wheelStopSpectacle");
 const buttonPress = document.getElementById("buttonPress");
+const practiceModeToggle = document.getElementById("practiceModeToggle");
 
 // Unseen canvas for drawing the wheel (which then gets copied to the main canvas and rotated)
 const wheelCanvas = document.createElement("canvas"), wheelCtx = wheelCanvas.getContext("2d");
@@ -167,6 +169,7 @@ function drawCanvas() {
 				if (!isPracticeMode()) {
 					const winner = shuffledNames[winningSegment];
 					addSpin(winner, [...includedNames], selectedName);
+					getHistoricalColdStreaks();
 				}
 			}
 
@@ -427,7 +430,7 @@ function wheelStopEffectSpectacle() {
 	stagelightTime = 3000;
 }
 
-// Show a streak badges
+// Show streak badges on name buttons
 let updateStreakIndicators = function (streaks, winStreaks = {}) {
 
     let maxColdStreak = 0;
@@ -463,6 +466,86 @@ let updateStreakIndicators = function (streaks, winStreaks = {}) {
         }
     });
 };
+
+// Fetch full spin history and collect every cold streak instance per person.
+// The podium shows the top 3 instances across all history — the same person
+// can appear multiple times if they've had two separate long streaks.
+// getWinnerStats returns docs newest-first, so we reverse before walking.
+async function getHistoricalColdStreaks() {
+    const snapshot = await getWinnerStats(1000);
+    if (!snapshot) return;
+
+    // Reverse to chronological (oldest to newest) order
+    const spinDocs = [];
+    snapshot.forEach(doc => spinDocs.push(doc.data()));
+    spinDocs.reverse();
+
+    // Track each person's current running streak length
+    const currentStreak = {};
+    names.forEach(name => { currentStreak[name] = 0; });
+
+    // Every completed (and still-open) streak gets recorded as an instance
+    const allInstances = []; // { name, count }
+
+    for (const spin of spinDocs) {
+        const active = spin.activeNames || [];
+        const winner = spin.winner;
+
+        for (const name of names) {
+            if (!active.includes(name)) {
+                // Not in the pool this spin — streak neither grows nor ends
+                continue;
+            }
+            if (winner === name) {
+                // They won — record this streak instance if it has length, then reset
+                if (currentStreak[name] > 0) {
+                    allInstances.push({ name, count: currentStreak[name] });
+                }
+                currentStreak[name] = 0;
+            } else {
+                // Active but didn't win — streak grows
+                currentStreak[name]++;
+            }
+        }
+    }
+
+    // Flush any streaks still open at the end of the data
+    for (const name of names) {
+        if (currentStreak[name] > 0) {
+            allInstances.push({ name, count: currentStreak[name] });
+        }
+    }
+
+    // Sort all instances descending and take the top 3
+    allInstances.sort((a, b) => b.count - a.count);
+    const top3 = allInstances.slice(0, 3);
+
+    renderColdStreakPodium(top3);
+}
+
+// Render the top 3 cold streak instances on the podium.
+// Accepts a pre-sorted array of up to 3 { name, count } objects.
+// Podium slot order in the DOM: rank 2 (left), rank 1 (center), rank 3 (right).
+function renderColdStreakPodium(top3) {
+    [1, 2, 3].forEach(rank => {
+        const column = document.querySelector(`#podiumStage .podiumColumn[data-rank="${rank}"]`);
+        if (!column) return;
+
+        const entry = top3[rank - 1];
+        const nameEl = column.querySelector(".podiumName");
+        const streakEl = column.querySelector(".podiumStreak");
+
+        if (entry) {
+            nameEl.textContent = entry.name;
+            streakEl.textContent = entry.count;
+            column.classList.remove("podiumEmpty");
+        } else {
+            nameEl.textContent = "—";
+            streakEl.textContent = "0";
+            column.classList.add("podiumEmpty");
+        }
+    });
+}
 
 // Check if user is hovering over the spin button
 let lastMouseEvent = null;
@@ -525,12 +608,12 @@ window.addEventListener("load", () => {
 
 function formatDateTime(date) {
     const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
+    const mo = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
     const hours = String(date.getHours()).padStart(2, '0');
     const minutes = String(date.getMinutes()).padStart(2, '0');
 
-    return `${year}-${month}-${day} ${hours}:${minutes}`;
+    return `${year}-${mo}-${d} ${hours}:${minutes}`;
 }
 
 subscribeToRecentSpins(snapshot => {
@@ -545,26 +628,28 @@ subscribeToRecentSpins(snapshot => {
     `;
     tbody.appendChild(headerRow);
 
+    // Build spinDocs once and reuse for both the table and streak calculations
+    const spinDocs = [];
     snapshot.forEach(doc => {
         const data = doc.data();
+        spinDocs.push(data);
+
         const name = data.winner || "Unknown";
         const ts = data.timestamp?.toDate ? data.timestamp.toDate() : null;
-
         const timeStr = ts ? formatDateTime(ts) : "--";
 
         const row = document.createElement("tr");
-        row.innerHTML = `
-            <td>${name}</td>
-            <td>${timeStr}</td>
-        `;
+        const tdName = document.createElement("td");
+        const tdTime = document.createElement("td");
+        tdName.textContent = name;
+        tdTime.textContent = timeStr;
+        row.appendChild(tdName);
+        row.appendChild(tdTime);
         tbody.appendChild(row);
     });
 
     const streaks = {};
     const winStreaks = {};
-
-    const spinDocs = [];
-    snapshot.forEach(doc => spinDocs.push(doc.data()));
 
     names.forEach(name => {
         let count = 0;
@@ -599,11 +684,11 @@ subscribeToRecentSpins(snapshot => {
     }
 
     updateStreakIndicators(streaks, winStreaks);
+    getHistoricalColdStreaks();
 });
 
 function isPracticeMode() {
-    const toggle = document.getElementById("practiceModeToggle");
-    return toggle && toggle.checked;
+    return practiceModeToggle && practiceModeToggle.checked;
 }
 
 // Initialize wheel tick audio
@@ -661,13 +746,9 @@ function updateOptionsUI() {
 }
 
 document.getElementById("practiceModeToggle").addEventListener("change", () => {
-    drawWheelBase();
+    drawCanvas();
 });
 
 updateOptionsUI();
-
-
-
-
 
 drawWheelBase();
