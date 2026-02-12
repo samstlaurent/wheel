@@ -1,0 +1,46 @@
+#statsModal {
+	display: none;
+	position: fixed;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	background: rgba(0, 0, 0, 0.5);
+	backdrop-filter: blur(4px);
+	align-items: center;
+	justify-content: center;
+	z-index: 1000;
+	padding: 20px;
+}
+
+#statsContent {
+	background: white;
+	padding: 32px;
+	border-radius: 16px;
+	width: 400px;
+	max-width: 90%;
+	text-align: center;
+	box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+	animation: slideUp 0.3s ease-out;
+}
+
+#statsContent h2,
+#statsContent h3 {
+	margin: 0 0 24px 0;
+	font-size: 24px;
+	font-weight: 600;
+	color: #1a1a1a;
+	padding-bottom: 16px;
+	border-bottom: 2px solid #f0f0f0;
+}
+
+.chartContainer {
+    position: relative;
+    width: 100%;
+    height: 300px;
+}
+
+#statsChart {
+    width: 100% !important;
+    height: 100% !important;
+}

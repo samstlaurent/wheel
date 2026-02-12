@@ -1,0 +1,67 @@
+#nameList {
+	margin: 20px;
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: center;
+}
+
+.nameItem {
+	font-size: 15px;
+	font-weight: 600;
+	display: inline-flex;
+	align-items: center;
+	background: #4CAF50;
+	color: white;
+	padding: 5px 10px;
+	border: none;
+	border-radius: 10px;
+	cursor: pointer;
+	transition: all 0.2s ease;
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.nameItem:hover:not(.disabled) {
+	transform: translateY(-2px);
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.nameItem:active:not(.disabled) {
+	transform: translateY(0);
+}
+
+.excluded {
+	background: #9C27B0;
+}
+
+.excluded:hover {
+	background: #7B1FA2;
+}
+
+.disabled {
+	background: #e0e0e0;
+	color: #999;
+	cursor: not-allowed;
+	box-shadow: none;
+	transform: none;
+}
+
+.streakBadge {
+	margin-top: 4px;
+	font-size: 16px;
+	font-weight: bold;
+	white-space: nowrap;
+}
+
+.iconContainer {
+	width: 100%;
+	display: flex;
+	justify-content: center;
+	margin-bottom: 4px;
+	cursor: pointer;
+	opacity: 0.6;
+	transition: opacity 0.2s ease;
+}
+
+.iconContainer:hover {
+	opacity: 1;
+}

@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8" />
+	<title>Sporcle of the Day Selector</title>
+	<link rel="icon" href="images/wheel.ico" type="image/ico">
+	<link rel="stylesheet" href="css/style.css">
+	<link rel="stylesheet" href="css/optionsModal.css">
+	<link rel="stylesheet" href="css/statsModal.css">
+	<link rel="stylesheet" href="css/instructionsModal.css">
+	<link rel="stylesheet" href="css/namesList.css">
+	<link rel="stylesheet" href="css/recentSpins.css">
+	<link rel="stylesheet" href="css/coldStreakPodium.css">
+</head>
+<body>
+
+	<div id="mainContentWrapper">
+
+		<div id="recentSpinsContainer">
+			<h3>Recent Spins</h3>
+			<table id="recentSpinsTable">
+				<tbody id="recentSpinsBody"></tbody>
+			</table>
+			<div id="recentSpinsFooter">
+				<button id="statsButton">Show Graph</button>
+			</div>
+		</div>
+
+		<canvas id="mainCanvas" width="800" height="600"></canvas>
+
+		<div id="buttonColumn">
+			<button id="instructionsButton">Instructions</button>
+			<button id="optionsButton">Options</button>
+			<button id="downloadButton" disabled>Download Video</button>
+			<button id="screenshotButton" disabled>Download Screenshot</button>
+
+			<div id="coldStreakPodium">
+				<h3>Longest Streaks</h3>
+				<div id="podiumStage">
+					<div class="podiumColumn podiumEmpty" data-rank="2">
+						<div class="podiumCard">
+							<div class="podiumName">—</div>
+							<div class="podiumStreak">0</div>
+						</div>
+						<div class="podiumBlock"></div>
+					</div>
+					<div class="podiumColumn podiumEmpty" data-rank="1">
+						<div class="podiumCard">
+							<div class="podiumName">—</div>
+							<div class="podiumStreak">0</div>
+						</div>
+						<div class="podiumBlock"></div>
+					</div>
+					<div class="podiumColumn podiumEmpty" data-rank="3">
+						<div class="podiumCard">
+							<div class="podiumName">—</div>
+							<div class="podiumStreak">0</div>
+						</div>
+						<div class="podiumBlock"></div>
+					</div>
+				</div>
+			</div>
+		</div>
+
+	</div>
+
+	<div id="nameList"></div>
+
+	<div id="instructionsModal">
+		<div id="instructionsContent">
+			<h2>Instructions</h2>
+			<p>
+				<span class="instructionLine">
+					<span class="instructionText">
+						Click the <img src="images/selectorIconDisabled.png" class="instructionsInlineIcon"> icon above your <span class="instructionsInlineNameButton">Name</span> to mark yourself as the current selector.
+					</span>
+				</span>
+				<span class="instructionLine">
+					<span class="instructionText">
+						Click on the <span class="instructionsInlineNameButton">Name</span> buttons to temporarily remove those who are unavailable.
+					</span>
+				</span>
+				<span class="instructionLine">
+					<span class="instructionText">
+						Spin the wheel then use <span class="instructionsInlineDownloadButton">Download Video</span> to post in the Teams chat.
+					</span>
+				</span>
+			</p>
+		</div>
+	</div>
+
+	<div id="optionsModal" style="display: none;">
+        <div id="optionsContent">
+            <h3>Options</h3>
+
+            <div class="section">
+                <h4>Wheel Colors</h4>
+                <label class="optionRow">
+                    <input type="radio" name="colorMode" value="hue" checked />
+                    <span>Full Color Wheel</span>
+                    <img
+                        src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Cpath d='M12 16v-4M12 8h.01'/%3E%3C/svg%3E"
+                        title="Colors each wheel slice by evenly spacing hues around the 360° color spectrum, so every segment has a distinct color."
+                    />
+                </label>
+                <label class="optionRow optionRow--withSlider">
+                    <input type="radio" name="colorMode" value="lightness" />
+                    <span>Fixed Hue</span>
+                    <img
+                        src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Cpath d='M12 16v-4M12 8h.01'/%3E%3C/svg%3E"
+                        title="Colors each wheel slice using the same hue (adjustable with the slider) and varies the lightness to differentiate segments."
+                    />
+                    <input
+                        type="range"
+                        id="hueSlider"
+                        min="0"
+                        max="360"
+                        value="200"
+                        style="display:none;"
+                    />
+                </label>
+            </div>
+
+            <hr />
+
+            <div class="section">
+                <h4>Miscellaneous</h4>
+                <label class="optionRow">
+                    <input type="checkbox" id="practiceModeToggle"/>
+                    <span>Practice Mode</span>
+                    <img
+                        src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Cpath d='M12 16v-4M12 8h.01'/%3E%3C/svg%3E"
+                        title="In Practice Mode, spins are not recorded for stats."
+                    />
+                </label>
+            </div>
+        </div>
+    </div>
+
+	<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+	<div id="statsModal">
+		<div id="statsContent">
+			<h3>Winner Frequency</h3>
+			<div id="chartTypeToggle" style="margin-bottom: 10px;">
+				<button id="barChartBtn" class="chartTypeBtn active" style="background: #4ba3f2; margin: 2px; padding: 6px 12px; border: none; border-radius: 6px; cursor: pointer; color: white;">Bar Chart</button>
+				<button id="pieChartBtn" class="chartTypeBtn" style="background: #999; margin: 2px; padding: 6px 12px; border: none; border-radius: 6px; cursor: pointer; color: white;">Pie Chart</button>
+			</div>
+			<div class="chartContainer">
+				<canvas id="statsChart"></canvas>
+			</div>
+		</div>
+	</div>
+
+	<audio id="wheelTick" src="https://raw.githubusercontent.com/samstlaurent/wheel/main/audio/wheelTick.mp3" crossorigin=""></audio>
+	<audio id="wheelStopNeutral" src="https://raw.githubusercontent.com/samstlaurent/wheel/main/audio/wheelStopNeutral.mp3" crossorigin=""></audio>
+	<audio id="wheelStopParty" src="https://raw.githubusercontent.com/samstlaurent/wheel/main/audio/wheelStopParty.mp3" crossorigin=""></audio>
+	<audio id="wheelStopSpectacle" src="https://raw.githubusercontent.com/samstlaurent/wheel/main/audio/wheelStopSpectacle.mp3" crossorigin=""></audio>
+	<audio id="buttonPress" src="https://raw.githubusercontent.com/samstlaurent/wheel/main/audio/buttonPress.mp3" crossorigin=""></audio>
+
+	<script type = "module" src="js/main.js"></script>
+</body>
+</html>

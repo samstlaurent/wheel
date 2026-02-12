@@ -1,0 +1,101 @@
+#coldStreakPodium {
+	width: 200px;
+	background: white;
+	padding: 16px;
+	margin-top: 10px;
+	border-radius: 16px;
+	box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+	text-align: center;
+	box-sizing: border-box;
+}
+
+#coldStreakPodium h3 {
+	margin: 0 0 12px 0;
+	font-weight: 600;
+	font-size: 18px;
+	color: #1a1a1a;
+	padding-bottom: 12px;
+	border-bottom: 2px solid #f0f0f0;
+}
+
+#podiumStage {
+	display: flex;
+	align-items: flex-end;
+	justify-content: center;
+	gap: 4px;
+}
+
+/* Each column = info card stacked on top of a podium block */
+.podiumColumn {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	flex: 1;
+}
+
+/* The info card sitting above the block */
+.podiumCard {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 4px;
+	margin-bottom: 4px;
+	width: 100%;
+}
+
+.podiumName {
+	font-size: 11px;
+	font-weight: 600;
+	color: #1a1a1a;
+	text-align: center;
+	word-break: break-word;
+	line-height: 1.2;
+}
+
+.podiumStreak {
+	font-size: 13px;
+	font-weight: 700;
+	color: #4BCCFA;
+	line-height: 1;
+}
+
+/* The physical podium block */
+.podiumBlock {
+	width: 100%;
+	border-radius: 6px 6px 0 0;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 18px;
+	font-weight: 800;
+	color: white;
+	text-shadow: 0 1px 3px rgba(0,0,0,0.25);
+}
+
+/* Heights for 1st/2nd/3rd */
+.podiumColumn[data-rank="1"] .podiumBlock {
+	height: 64px;
+	background: linear-gradient(160deg, #f9ca24, #e0a800);
+}
+
+.podiumColumn[data-rank="2"] .podiumBlock {
+	height: 48px;
+	background: linear-gradient(160deg, #b2bec3, #8e9ea7);
+}
+
+.podiumColumn[data-rank="3"] .podiumBlock {
+	height: 32px;
+	background: linear-gradient(160deg, #cd8b4a, #a96b2c);
+}
+
+.podiumColumn.podiumEmpty .podiumName {
+	color: #bbb;
+}
+
+.podiumColumn.podiumEmpty .podiumStreak {
+	color: #ccc;
+}
+
+.podiumColumn.podiumEmpty .podiumBlock {
+	background: linear-gradient(160deg, #e0e0e0, #cacaca);
+}
