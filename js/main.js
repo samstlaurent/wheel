@@ -32,7 +32,7 @@ const day = today.getDate();
 
 let names = [];
 if (month == 4 && day == 1) {
-	names = ["Sam", "Sam", "Sam", "Sam", "Sam", "Sam", "Sam", "Sam", "Sam", "Sam", "Sam", "Sam", "Sam"];
+	names = ["アロン・ドリミー", "アーロン・エッケル", "アンドレア", "ジャスミン", "ジェイデン", "ジェシカ", "ジョセイ", "ローラ", "ミッシェル", "クインティン", "サム", "ビクトリア"];
 } else {
 	names = ["Aaron D", "Aaron E", "Andrea", "Jasmine", "Jayden", "Jessica", "Josey", "Lauren", "Michelle", "Quintin", "Sam", "Victoria"];
 }
@@ -44,6 +44,7 @@ let wheelAngle = 0, wheelSpeed = 0, wheelFriction = 0;
 let busy = false, lastFrameTime = 0, lastTickTime = 0;
 let winningSegment = 0, previousWinningSegment = 0, arrowDeflection = 0;
 let segmentAngles = [], segmentBoundaries = [];
+let practiceMode = false;
 
 const wheelTick = document.getElementById("wheelTick");
 const wheelStopNeutral = document.getElementById("wheelStopNeutral");
@@ -166,7 +167,7 @@ function drawCanvas() {
 
 			if (!spinLogged) {
 				spinLogged = true;
-				if (!isPracticeMode()) {
+				if (!practiceMode) {
 					const winner = shuffledNames[winningSegment];
 					addSpin(winner, [...includedNames], selectedName);
 					getHistoricalColdStreaks();
@@ -364,7 +365,7 @@ function drawCanvas() {
 	}
 
 	// Draw practice mode
-	if (isPracticeMode()) {
+	if (practiceMode) {
 		ctx.save();
 		ctx.fillStyle = "rgba(0, 0, 0, 0.65)";
 		ctx.fillRect(0, canvasCenterY - 30, mainCanvas.width, 60);
@@ -475,52 +476,50 @@ async function getHistoricalColdStreaks() {
     const snapshot = await getWinnerStats(1000);
     if (!snapshot) return;
 
-    // Reverse to chronological (oldest to newest) order
     const spinDocs = [];
     snapshot.forEach(doc => spinDocs.push(doc.data()));
-    spinDocs.reverse();
+    spinDocs.reverse(); // oldest → newest
 
-    // Track each person's current running streak length
+    // Build the universe of names from the spin history itself,
+    // not from the current `names` array — so removed names still count.
+    const allNamesEverSeen = new Set();
+    for (const spin of spinDocs) {
+        (spin.activeNames || []).forEach(n => allNamesEverSeen.add(n));
+        if (spin.winner) allNamesEverSeen.add(spin.winner);
+    }
+
     const currentStreak = {};
-    names.forEach(name => { currentStreak[name] = 0; });
+    allNamesEverSeen.forEach(name => { currentStreak[name] = 0; });
 
-    // Every completed (and still-open) streak gets recorded as an instance
-    const allInstances = []; // { name, count }
+    const allInstances = [];
 
     for (const spin of spinDocs) {
         const active = spin.activeNames || [];
         const winner = spin.winner;
 
-        for (const name of names) {
-            if (!active.includes(name)) {
-                // Not in the pool this spin — streak neither grows nor ends
-                continue;
-            }
+        for (const name of allNamesEverSeen) {
+            if (!active.includes(name)) continue;
+
             if (winner === name) {
-                // They won — record this streak instance if it has length, then reset
                 if (currentStreak[name] > 0) {
                     allInstances.push({ name, count: currentStreak[name] });
                 }
                 currentStreak[name] = 0;
             } else {
-                // Active but didn't win — streak grows
                 currentStreak[name]++;
             }
         }
     }
 
-    // Flush any streaks still open at the end of the data
-    for (const name of names) {
+    // Flush open streaks
+    for (const name of allNamesEverSeen) {
         if (currentStreak[name] > 0) {
             allInstances.push({ name, count: currentStreak[name] });
         }
     }
 
-    // Sort all instances descending and take the top 3
     allInstances.sort((a, b) => b.count - a.count);
-    const top3 = allInstances.slice(0, 3);
-
-    renderColdStreakPodium(top3);
+    renderColdStreakPodium(allInstances.slice(0, 3));
 }
 
 // Render the top 3 cold streak instances on the podium.
@@ -687,10 +686,6 @@ subscribeToRecentSpins(snapshot => {
     getHistoricalColdStreaks();
 });
 
-function isPracticeMode() {
-    return practiceModeToggle && practiceModeToggle.checked;
-}
-
 // Initialize wheel tick audio
 initWheelTick(wheelTick);
 
@@ -746,6 +741,7 @@ function updateOptionsUI() {
 }
 
 document.getElementById("practiceModeToggle").addEventListener("change", () => {
+	practiceMode = practiceModeToggle.checked;
     drawCanvas();
 });
 
