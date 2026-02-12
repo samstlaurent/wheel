@@ -3,13 +3,7 @@ import {
     playSound
 } from './recorder.js';
 
-export function initNamesUI({
-    names,
-    includedNames,
-    onNamesChanged,
-    onSelectedNameChanged,
-    buttonPressSound
-}) {
+export function initNamesUI({names, includedNames, onNamesChanged, onSelectedNameChanged, buttonPressSound}) {
     let selectedIcon = null;
     let selectedName = null;
 

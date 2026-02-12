@@ -84,10 +84,6 @@ function subscribeToRecentSpins(callback) {
 }
 
 export {
-	db,
-	auth,
-	currentUserId,
-	localUserId,
 	isFirstVisit,
 	addSpin,
 	subscribeToRecentSpins,

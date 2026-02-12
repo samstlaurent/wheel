@@ -2,13 +2,14 @@ import { getWinnerStats } from './firebase.js';
 
 let statsChart = null;
 let currentChartType = 'bar';
+let cachedSpinData = null;
 
-export function initStatsModule(names, nameColorMap, colorMode, baseHue) {
+export function initStatsModule(names, nameColorMap) {
     const statsModal = document.getElementById("statsModal");
     const statsButton = document.getElementById("statsButton");
 
     statsButton.onclick = () => {
-        logWinnerFrequencyFromFirestore(names, nameColorMap, 1000);
+        logWinnerFrequencyFromFirestore(names, nameColorMap, 1000, true);
         statsModal.style.display = "flex";
     };
 
@@ -39,56 +40,53 @@ function setChartTypeButtons(activeType) {
 }
 
 const EXCLUDED_COLOR = '#e0e0e0';
-async function logWinnerFrequencyFromFirestore(names, nameColorMap, limitCount = 1000) {
+
+async function logWinnerFrequencyFromFirestore(names, nameColorMap, limitCount = 1000, bustCache = false) {
     try {
-        const snapshot = await getWinnerStats(limitCount);
-        if (!snapshot) return;
+        if (!cachedSpinData || bustCache) {
+            const snapshot = await getWinnerStats(limitCount);
+            if (!snapshot) return;
+
+            cachedSpinData = [];
+            snapshot.forEach(doc => cachedSpinData.push(doc.data()));
+        }
 
         const counts = {};
         const expected = {};
 
-        names.forEach(name => {
+        // Seed with current names, then add any historical names seen in data
+        const allNames = new Set(names);
+        cachedSpinData.forEach(data => {
+            if (data.winner) allNames.add(data.winner);
+            (data.activeNames || []).forEach(n => allNames.add(n));
+        });
+
+        allNames.forEach(name => {
             counts[name] = 0;
             expected[name] = 0;
         });
 
-        snapshot.forEach(doc => {
-            const data = doc.data();
-
+        cachedSpinData.forEach(data => {
             const winner = data.winner;
             const active = data.activeNames || [];
             const selected = data.userName;
 
-            if (winner) {
-                if (!(winner in counts)) counts[winner] = 0;
-                counts[winner]++;
-            }
+            if (winner) counts[winner]++;
 
             if (active.length === 0) return;
 
             const totalWeight = active.length - 0.5;
-
             active.forEach(name => {
-                if (!(name in expected)) expected[name] = 0;
-
-                const weight = (name === selected) ? 0.5 : 1;
-                const probability = weight / totalWeight;
-
-                expected[name] += probability;
+                const weight = name === selected ? 0.5 : 1;
+                expected[name] += weight / totalWeight;
             });
         });
 
-        const labels = [...names];
+        const labels = [...allNames];
         const data = labels.map(name => counts[name] || 0);
         const expectedData = labels.map(name => expected[name] || 0);
 
-        const colors = labels.map((name) => {
-            if (nameColorMap && nameColorMap[name]) {
-                return nameColorMap[name];
-            }
-
-            return EXCLUDED_COLOR;
-        });
+        const colors = labels.map(name => nameColorMap[name] || EXCLUDED_COLOR);
 
         const ctx = document.getElementById("statsChart").getContext("2d");
 
@@ -156,24 +154,23 @@ async function logWinnerFrequencyFromFirestore(names, nameColorMap, limitCount =
                         callbacks: {
                             label: function(context) {
                                 if (currentChartType !== 'bar') {
-                                    // Default pie chart tooltip
                                     return context.label + ': ' + context.parsed;
                                 }
 
                                 const index = context.dataIndex;
-                                const datasets = context.chart.data.datasets;
+                                const chartDatasets = context.chart.data.datasets;
 
-                                const actual = datasets[1].data[index];
-                                const expected = datasets[0].data[index];
+                                const actual = chartDatasets[1].data[index];
+                                const exp = chartDatasets[0].data[index];
 
-                                const diff = actual - expected;
+                                const diff = actual - exp;
                                 const diffText = diff >= 0
                                     ? `+${diff.toFixed(2)}`
                                     : diff.toFixed(2);
 
                                 return [
                                     `Actual: ${actual}`,
-                                    `Expected: ${expected.toFixed(2)}`,
+                                    `Expected: ${exp.toFixed(2)}`,
                                     `Diff: ${diffText}`
                                 ];
                             }
@@ -195,9 +192,6 @@ async function logWinnerFrequencyFromFirestore(names, nameColorMap, limitCount =
                     }
                 }
             };
-        } else {
-            // Don't show expected dataset on pie chart
-            chartConfig.data.datasets = chartConfig.data.datasets.slice(0, 1);
         }
 
         statsChart = new Chart(ctx, chartConfig);

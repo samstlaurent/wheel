@@ -108,8 +108,6 @@ function hasSoundsPlaying() {
 }
 
 export {
-	audioCtx,
-	audioDestination,
 	initRecorder,
 	startRecording,
 	stopRecording,

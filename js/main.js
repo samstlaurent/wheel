@@ -690,7 +690,7 @@ subscribeToRecentSpins(snapshot => {
 initWheelTick(wheelTick);
 
 // Initialize stats and graphs
-initStatsModule(names, nameColorMap, colorMode, baseHue);
+initStatsModule(names, nameColorMap);
 
 // Initialize names UI
 let selectedName = null;
