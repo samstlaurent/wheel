@@ -27,12 +27,13 @@ const spinButtonRadius = 60;
 const TWO_PI = Math.PI * 2;
 
 const today = new Date();
+const year = today.getFullYear();
 const month = today.getMonth() + 1;
 const day = today.getDate();
 
 let names = [];
-if (month == 4 && day == 1) {
-	names = ["アロン・ドリミー", "アーロン・エッケル", "アンドレア", "ジャスミン", "ジェイデン", "ジェシカ", "ジョセイ", "ローラ", "ミッシェル", "クインティン", "サム", "ビクトリア"];
+if ((year == 2026) && ((month == 2 && day >= 24) || (month == 3 && day <= 11))) { // 2026-02-24 to 2026-03-11
+	names = ["アーロン・ドリミー", "アーロン・エッケル", "アンドレア", "ジャスミン", "ジェイデン", "ジェシカ", "ジョセイ", "ローラン", "ミッシェル", "クインティン", "サム", "ビクトリア"];
 } else {
 	names = ["Aaron D", "Aaron E", "Andrea", "Jasmine", "Jayden", "Jessica", "Josey", "Lauren", "Michelle", "Quintin", "Sam", "Victoria"];
 }
@@ -615,6 +616,30 @@ function formatDateTime(date) {
     return `${year}-${mo}-${d} ${hours}:${minutes}`;
 }
 
+function getFormattedDate() {
+    const now = new Date();
+    const year = now.getFullYear();
+    const mo = String(now.getMonth() + 1).padStart(2, '0');
+    const d = String(now.getDate()).padStart(2, '0');
+    return `${year}-${mo}-${d}`;
+}
+
+function downloadFile(blob, filename) {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+}
+
+document.getElementById("screenshotButton").onclick = () => {
+	mainCanvas.toBlob(blob => {
+		const filename = `Sporcle of the Day Selector ${getFormattedDate()}.png`;
+		downloadFile(blob, filename);
+	});
+};
+
 subscribeToRecentSpins(snapshot => {
     const tbody = document.getElementById("recentSpinsBody");
     tbody.innerHTML = "";
@@ -685,6 +710,8 @@ subscribeToRecentSpins(snapshot => {
     updateStreakIndicators(streaks, winStreaks);
     getHistoricalColdStreaks();
 });
+
+initRecorder(mainCanvas);
 
 // Initialize wheel tick audio
 initWheelTick(wheelTick);
