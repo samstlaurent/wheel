@@ -65,6 +65,10 @@ let baseHue = Number(localStorage.getItem("baseHue")) || 200;
 // Create a color map for the graph to use
 let nameColorMap = {};
 
+const wreathImage = new Image();
+wreathImage.src = "images/wreath.png";
+const wreathSize = spinButtonRadius * 2 + 40;
+
 function drawWheelBase() {
     wheelCtx.clearRect(0, 0, wheelCanvas.width, wheelCanvas.height);
 
@@ -296,6 +300,11 @@ function drawCanvas() {
 	ctx.textAlign = "center";
 	ctx.textBaseline = "middle";
 	ctx.fillText(busy ? "Spinning..." : "SPIN", canvasCenterX, canvasCenterY);
+
+	// Draw seasonal wreath
+	if (month == 12) {
+		ctx.drawImage(wreathImage, canvasCenterX - wreathSize / 2, canvasCenterY - wreathSize / 2, wreathSize, wreathSize);
+	}
 
 	// Draw arrow at 3 o'clock
 	ctx.translate(canvasCenterX + wheelRadius + 15, canvasCenterY);
@@ -774,4 +783,4 @@ document.getElementById("practiceModeToggle").addEventListener("change", () => {
 
 updateOptionsUI();
 
-drawWheelBase();
+wreathImage.onload = () => drawWheelBase();
