@@ -87,3 +87,93 @@
 	text-transform: uppercase;
 	letter-spacing: 0.5px;
 }
+
+#recentSpinsContainer {
+	width: 200px;
+	height: 570px;
+	background: white;
+	padding: 16px;
+	border-radius: 16px;
+	box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+	text-align: left;
+	display: flex;
+	flex-direction: column;
+	overflow: hidden;
+}
+
+#recentSpinsContainer h3 {
+	margin: 0 0 16px 0;
+	text-align: center;
+	font-weight: 600;
+	font-size: 18px;
+	color: #1a1a1a;
+	padding-bottom: 12px;
+	border-bottom: 2px solid #f0f0f0;
+	flex: 0 0 auto;
+}
+
+#recentSpinsTable {
+	width: 200px;
+	font-size: 13px;
+	display: block;
+	flex: 1 1 auto;
+	min-height: 0;
+	overflow: hidden;
+}
+
+#recentSpinsFooter {
+	flex: 0 0 auto;
+	margin-top: 12px;
+	text-align: center;
+}
+
+#recentSpinsFooter button {
+	width: 100%;
+	background: #2196F3;
+}
+
+#recentSpinsTable tbody {
+	display: block;
+	height: 100%;
+	overflow-y: auto;
+	scrollbar-width: thin;
+	scrollbar-color: #ccc #f5f5f5;
+}
+
+#recentSpinsTable tbody::-webkit-scrollbar {
+	width: 8px;
+}
+
+#recentSpinsTable tbody::-webkit-scrollbar-track {
+	background: #f5f5f5;
+	border-radius: 4px;
+}
+
+#recentSpinsTable tbody::-webkit-scrollbar-thumb {
+	background: #ccc;
+	border-radius: 4px;
+}
+
+#recentSpinsTable tbody::-webkit-scrollbar-thumb:hover {
+	background: #999;
+}
+
+#recentSpinsTable td {
+	padding: 8px 6px;
+	border-bottom: 1px solid #f0f0f0;
+	white-space: nowrap;
+	box-sizing: border-box;
+	color: #333;
+}
+
+#recentSpinsTable .fake-header td {
+	position: sticky;
+	top: 0;
+	background-color: #fafafa;
+	font-weight: 600;
+	z-index: 1;
+	color: #666;
+	font-size: 12px;
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+}

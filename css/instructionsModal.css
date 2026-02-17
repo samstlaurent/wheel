@@ -121,3 +121,127 @@
 	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 	background: #e91e63;
 }
+
+#instructionsModal {
+	display: none;
+	position: fixed;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	background: rgba(0, 0, 0, 0.5);
+	backdrop-filter: blur(4px);
+	align-items: center;
+	justify-content: center;
+	z-index: 1000;
+}
+
+#instructionsContent {
+	background: white;
+	padding: 32px;
+	border-radius: 16px;
+	max-width: 650px;
+	width: 90%;
+	max-height: 90vh;
+	overflow-y: auto;
+	box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+	animation: slideUp 0.3s ease-out;
+}
+
+#instructionsContent h2 {
+	margin: 0 0 24px 0;
+	font-size: 24px;
+	font-weight: 600;
+	color: #1a1a1a;
+	padding-bottom: 16px;
+	border-bottom: 2px solid #f0f0f0;
+}
+
+#instructionsContent p {
+	margin: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 20px;
+	counter-reset: instruction-counter;
+}
+
+.instructionLine {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 16px 20px;
+	background: #fafafa;
+	border-radius: 10px;
+	border: 2px solid transparent;
+	font-size: 15px;
+	line-height: 1.6;
+	color: #333;
+	transition: all 0.2s ease;
+	flex-wrap: wrap;
+}
+
+.instructionLine::before {
+	content: counter(instruction-counter);
+	counter-increment: instruction-counter;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 28px;
+	height: 28px;
+	background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+	color: white;
+	border-radius: 50%;
+	font-weight: 700;
+	font-size: 14px;
+	flex-shrink: 0;
+	box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+}
+
+.instructionsInlineIcon {
+	width: 20px;
+	height: 20px;
+	vertical-align: middle;
+	margin: 0 2px;
+	flex-shrink: 0;
+}
+
+.instructionsInlineNameButton,
+.instructionsInlineDownloadButton {
+	display: inline;
+	align-items: center;
+	padding: 4px 10px;
+	border-radius: 6px;
+	font-weight: 600;
+	font-size: 14px;
+	white-space: nowrap;
+	transition: all 0.2s ease;
+	border: none;
+}
+
+.instructionsInlineNameButton {
+	font-size: 15px;
+	font-weight: 600;
+	display: inline-flex;
+	align-items: center;
+	background: #4CAF50;
+	color: white;
+	padding: 5px 10px;
+	border: none;
+	border-radius: 10px;
+	cursor: pointer;
+	transition: all 0.2s ease;
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.instructionsInlineDownloadButton {
+	font-size: 15px;
+	font-weight: 600;
+	padding: 12px 16px;
+	border: none;
+	border-radius: 10px;
+	cursor: pointer;
+	color: white;
+	transition: all 0.2s ease;
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+	background: #e91e63;
+}
