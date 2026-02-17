@@ -32,7 +32,7 @@ const month = today.getMonth() + 1;
 const day = today.getDate();
 
 let names = [];
-if ((year == 2026) && ((month == 2 && day >= 24) || (month == 3 && day <= 11))) { // 2026-02-24 to 2026-03-11
+if ((year == 2026) && ((month == 2 && day >= 17) || (month == 3 && day <= 11))) { // 2026-02-24 to 2026-03-11
 	names = ["アーロン・ドリミー", "アーロン・エッケル", "アンドレア", "ジャスミン", "ジェイデン", "ジェシカ", "ジョセイ", "ローラン", "ミッシェル", "クインティン", "サム", "ビクトリア"];
 } else {
 	names = ["Aaron D", "Aaron E", "Andrea", "Jasmine", "Jayden", "Jessica", "Josey", "Lauren", "Michelle", "Quintin", "Sam", "Victoria"];
@@ -124,7 +124,7 @@ function drawWheelBase() {
         wheelCtx.textAlign = "right";
         wheelCtx.textBaseline = "middle";
         wheelCtx.fillStyle = light < 40 ? "white" : "black";
-        wheelCtx.font = "16px Arial";
+        wheelCtx.font = "14px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif";
         wheelCtx.fillText(n, wheelRadius - 10, 0);
         wheelCtx.restore();
 
@@ -284,7 +284,7 @@ function drawCanvas() {
     ctx.textAlign = "right";
     ctx.textBaseline = "middle";
     ctx.fillStyle = "black";
-    ctx.font = "16px Arial";
+    ctx.font = "14px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif";
     ctx.fillText(shuffledNames[winningSegment], wheelRadius - 10, 0);
     ctx.restore();
     ctx.restore();
@@ -296,8 +296,8 @@ function drawCanvas() {
 	ctx.fillStyle = busy ? "#ccc" : "white";
 	ctx.fill();
 	ctx.fillStyle = busy ? "white" : "black";
-	ctx.font = "14px Arial";
-	ctx.textAlign = "center";
+	ctx.font = "14px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif";
+    ctx.textAlign = "center";
 	ctx.textBaseline = "middle";
 	ctx.fillText(busy ? "Spinning..." : "SPIN", canvasCenterX, canvasCenterY);
 
@@ -380,8 +380,8 @@ function drawCanvas() {
 		ctx.fillStyle = "rgba(0, 0, 0, 0.65)";
 		ctx.fillRect(0, canvasCenterY - 30, mainCanvas.width, 60);
 		ctx.fillStyle = "#ffcc00";
-		ctx.font = "bold 28px Arial";
-		ctx.textAlign = "center";
+		ctx.font = "bold 20px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif";
+        ctx.textAlign = "center";
 		ctx.textBaseline = "middle";
 		ctx.fillText("PRACTICE MODE", canvasCenterX, canvasCenterY);
 		ctx.restore();
