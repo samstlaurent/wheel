@@ -31,14 +31,29 @@ const year = today.getFullYear();
 const month = today.getMonth() + 1;
 const day = today.getDate();
 
-let names = [];
-if ((year == 2026) && ((month == 2 && day >= 17) || (month == 3 && day <= 11))) { // 2026-02-24 to 2026-03-11
-	names = ["アーロン・ドリミー", "アーロン・エッケル", "アンドレア", "ジャスミン", "ジェイデン", "ジェシカ", "ジョセイ", "ローラン", "ミッシェル", "クインティン", "サム", "ビクトリア"];
-} else {
-	names = ["Aaron D", "Aaron E", "Andrea", "Jasmine", "Jayden", "Jessica", "Josey", "Lauren", "Michelle", "Quintin", "Sam", "Victoria"];
-}
+const isJapaneseMode = (year == 2026) && ((month == 2 && day >= 24) || (month == 3 && day <= 11));
 
-let includedNames = [...names];
+const canonicalNames = ["Aaron D", "Aaron E", "Andrea", "Jasmine", "Jayden", "Jessica", "Josey", "Lauren", "Michelle", "Quintin", "Sam", "Victoria"];
+
+const japaneseNameMap = {
+    "Aaron D": "アーロン・ドリミー",
+    "Aaron E": "アーロン・エッケル",
+    "Andrea": "アンドレア",
+    "Jasmine": "ジャスミン",
+    "Jayden": "ジェイデン",
+    "Jessica": "ジェシカ",
+    "Josey": "ジョセイ",
+    "Lauren": "ローラン",
+    "Michelle": "ミッシェル",
+    "Quintin": "クインティン",
+    "Sam": "サム",
+    "Victoria": "ビクトリア"
+};
+
+const displayNames = isJapaneseMode ? canonicalNames.map(n => japaneseNameMap[n]) : [...canonicalNames];
+
+let names = [...displayNames];
+let includedNames = [...displayNames];
 let shuffledNames = [...includedNames];
 
 let wheelAngle = 0, wheelSpeed = 0, wheelFriction = 0;
@@ -173,8 +188,23 @@ function drawCanvas() {
 			if (!spinLogged) {
 				spinLogged = true;
 				if (!practiceMode) {
-					const winner = shuffledNames[winningSegment];
-					addSpin(winner, [...includedNames], selectedName);
+					const displayWinner = shuffledNames[winningSegment];
+
+					const winner = isJapaneseMode
+						? canonicalNames.find(n => japaneseNameMap[n] === displayWinner)
+						: displayWinner;
+
+					const activeCanonicalNames = isJapaneseMode
+						? includedNames.map(d =>
+							canonicalNames.find(n => japaneseNameMap[n] === d)
+						)
+						: [...includedNames];
+
+					const selectedCanonical = isJapaneseMode && selectedName
+						? canonicalNames.find(n => japaneseNameMap[n] === selectedName)
+						: selectedName;
+
+					addSpin(winner, activeCanonicalNames, selectedCanonical);
 					getHistoricalColdStreaks();
 				}
 			}
