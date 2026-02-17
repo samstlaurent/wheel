@@ -31,7 +31,7 @@ const year = today.getFullYear();
 const month = today.getMonth() + 1;
 const day = today.getDate();
 
-const isJapaneseMode = (year == 2026) && ((month == 2 && day >= 24) || (month == 3 && day <= 11));
+const isJapaneseMode = (year == 2026) && ((month == 2 && day >= 17) || (month == 3 && day <= 11));
 
 const canonicalNames = ["Aaron D", "Aaron E", "Andrea", "Jasmine", "Jayden", "Jessica", "Josey", "Lauren", "Michelle", "Quintin", "Sam", "Victoria"];
 
@@ -299,27 +299,29 @@ function drawCanvas() {
     ctx.drawImage(wheelCanvas, -canvasCenterX, -canvasCenterY);
 
     // Draw highlight over the current winning segment
-	let highlightStart = 0;
-    for (let i = 0; i < winningSegment; i++) highlightStart += segmentAngles[i];
-    const highlightArc = segmentAngles[winningSegment];
-	ctx.fillStyle = isJapaneseMode ? "#BC002D" : '#f2f2f2';
-    ctx.beginPath();
-    ctx.moveTo(0, 0);
-    ctx.arc(0, 0, wheelRadius + 1, highlightStart, highlightStart + highlightArc, false);
-    ctx.lineTo(0, 0);
-    ctx.fill();
-    ctx.strokeStyle = '#f2f2f2';
-    ctx.lineWidth = 2;
-    ctx.stroke();
-	ctx.save();
-    ctx.rotate(highlightStart + highlightArc / 2);
-    ctx.textAlign = "right";
-    ctx.textBaseline = "middle";
-    ctx.fillStyle = "black";
-    ctx.font = "14px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif";
-    ctx.fillText(shuffledNames[winningSegment], wheelRadius - 10, 0);
-    ctx.restore();
-    ctx.restore();
+	if (!isJapaneseMode) {
+		let highlightStart = 0;
+		for (let i = 0; i < winningSegment; i++) highlightStart += segmentAngles[i];
+		const highlightArc = segmentAngles[winningSegment];
+		ctx.fillStyle = '#f2f2f2';
+		ctx.beginPath();
+		ctx.moveTo(0, 0);
+		ctx.arc(0, 0, wheelRadius + 1, highlightStart, highlightStart + highlightArc, false);
+		ctx.lineTo(0, 0);
+		ctx.fill();
+		ctx.strokeStyle = '#f2f2f2';
+		ctx.lineWidth = 2;
+		ctx.stroke();
+		ctx.save();
+		ctx.rotate(highlightStart + highlightArc / 2);
+		ctx.textAlign = "right";
+		ctx.textBaseline = "middle";
+		ctx.fillStyle = "black";
+		ctx.font = "14px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif";
+		ctx.fillText(shuffledNames[winningSegment], wheelRadius - 10, 0);
+		ctx.restore();
+	}
+	ctx.restore();
 
 	// Draw spin button
 	ctx.save();
