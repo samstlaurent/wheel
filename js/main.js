@@ -113,7 +113,9 @@ function drawWheelBase() {
         let fillStyle;
 		let light;
 
-		if (colorMode === "hue") {
+		if (isJapaneseMode) {
+			fillStyle = "#BC002D";
+		} else if (colorMode === "hue") {
 			const hue = Math.round((360 * i / shuffledNames.length) % 360);
 			light = 60;
 			fillStyle = `hsl(${hue}, 80%, ${light}%)`;
@@ -300,7 +302,7 @@ function drawCanvas() {
 	let highlightStart = 0;
     for (let i = 0; i < winningSegment; i++) highlightStart += segmentAngles[i];
     const highlightArc = segmentAngles[winningSegment];
-	ctx.fillStyle = '#f2f2f2';
+	ctx.fillStyle = isJapaneseMode ? "#BC002D" : '#f2f2f2';
     ctx.beginPath();
     ctx.moveTo(0, 0);
     ctx.arc(0, 0, wheelRadius + 1, highlightStart, highlightStart + highlightArc, false);
@@ -323,13 +325,13 @@ function drawCanvas() {
 	ctx.save();
 	ctx.beginPath();
 	ctx.arc(canvasCenterX, canvasCenterY, spinButtonRadius, 0, TWO_PI);
-	ctx.fillStyle = busy ? "#ccc" : "white";
+	ctx.fillStyle = isJapaneseMode ? "#BC002D" : busy ? "#ccc" : "white";
 	ctx.fill();
 	ctx.fillStyle = busy ? "white" : "black";
 	ctx.font = "14px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif";
     ctx.textAlign = "center";
 	ctx.textBaseline = "middle";
-	ctx.fillText(busy ? "Spinning..." : "SPIN", canvasCenterX, canvasCenterY);
+	ctx.fillText(busy ? isJapaneseMode ? "紡糸..." : "Spinning..." : isJapaneseMode ? "スピン" : "SPIN", canvasCenterX, canvasCenterY);
 
 	// Draw seasonal wreath
 	if (month == 12) {
