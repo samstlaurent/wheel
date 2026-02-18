@@ -476,8 +476,13 @@ function wheelStopEffectSpectacle() {
 }
 
 // Show streak badges on name buttons
-let updateStreakIndicators = function (streaks, winStreaks = {}) {
+const displayToCanonical = {};
+canonicalNames.forEach(c => {
+    const display = isJapaneseMode ? japaneseNameMap[c] : c;
+    displayToCanonical[display] = c;
+});
 
+let updateStreakIndicators = function (streaks, winStreaks = {}) {
     let maxColdStreak = 0;
     for (const count of Object.values(streaks)) {
         if (count > maxColdStreak) maxColdStreak = count;
@@ -495,17 +500,18 @@ let updateStreakIndicators = function (streaks, winStreaks = {}) {
         const badge = wrapper.querySelector(".streakBadge");
         if (!badge) return;
 
-        const name = wrapper.dataset.name;
-        const coldStreak = streaks[name] || 0;
+        const displayName = wrapper.dataset.name;
+        const canonicalName = displayToCanonical[displayName] || displayName;
+        const coldStreak = streaks[canonicalName] || 0;
 
-        if (hotStreakName === name) {
+        if (hotStreakName === canonicalName) {
             badge.textContent = `🔥${hotStreakValue}`;
             badge.style.display = "block";
-			badge.style.color = "#ff4500";
-        } else if (coldStreak === maxColdStreak) {
+            badge.style.color = "#ff4500";
+        } else if (coldStreak === maxColdStreak && coldStreak > 0) {
             badge.textContent = `❄️${coldStreak}`;
             badge.style.display = "block";
-			badge.style.color = "#4BCCFA";
+            badge.style.color = "#4BCCFA";
         } else {
             badge.style.display = "none";
         }
