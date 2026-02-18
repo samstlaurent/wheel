@@ -31,7 +31,7 @@ const year = today.getFullYear();
 const month = today.getMonth() + 1;
 const day = today.getDate();
 
-const isJapaneseMode = (year == 2026) && ((month == 2 && day >= 17) || (month == 3 && day <= 11));
+const isJapaneseMode = (year == 2026) && ((month == 2 && day >= 24) || (month == 3 && day <= 11));
 
 const canonicalNames = ["Aaron D", "Aaron E", "Andrea", "Jasmine", "Jayden", "Jessica", "Josey", "Lauren", "Michelle", "Quintin", "Sam", "Victoria"];
 
