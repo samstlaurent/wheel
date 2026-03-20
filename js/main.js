@@ -31,26 +31,8 @@ const year = today.getFullYear();
 const month = today.getMonth() + 1;
 const day = today.getDate();
 
-const isJapaneseMode = (year == 2026) && ((month == 2 && day >= 24) || (month == 3 && day <= 11));
-
 const canonicalNames = ["Aaron D", "Aaron E", "Andrea", "Jasmine", "Jayden", "Jessica", "Josey", "Lauren", "Michelle", "Quintin", "Sam", "Victoria"];
-
-const japaneseNameMap = {
-    "Aaron D": "アーロン・ドリミー",
-    "Aaron E": "アーロン・エッケル",
-    "Andrea": "アンドレア",
-    "Jasmine": "ジャスミン",
-    "Jayden": "ジェイデン",
-    "Jessica": "ジェシカ",
-    "Josey": "ジョセイ",
-    "Lauren": "ローラン",
-    "Michelle": "ミッシェル",
-    "Quintin": "クインティン",
-    "Sam": "サム",
-    "Victoria": "ビクトリア"
-};
-
-const displayNames = isJapaneseMode ? canonicalNames.map(n => japaneseNameMap[n]) : [...canonicalNames];
+const displayNames = [...canonicalNames];
 
 let names = [...displayNames];
 let includedNames = [...displayNames];
@@ -113,9 +95,7 @@ function drawWheelBase() {
         let fillStyle;
 		let light;
 
-		if (isJapaneseMode) {
-			fillStyle = "#BC002D";
-		} else if (colorMode === "hue") {
+		if (colorMode === "hue") {
 			const hue = Math.round((360 * i / shuffledNames.length) % 360);
 			light = 60;
 			fillStyle = `hsl(${hue}, 80%, ${light}%)`;
@@ -192,19 +172,9 @@ function drawCanvas() {
 				if (!practiceMode) {
 					const displayWinner = shuffledNames[winningSegment];
 
-					const winner = isJapaneseMode
-						? canonicalNames.find(n => japaneseNameMap[n] === displayWinner)
-						: displayWinner;
-
-					const activeCanonicalNames = isJapaneseMode
-						? includedNames.map(d =>
-							canonicalNames.find(n => japaneseNameMap[n] === d)
-						)
-						: [...includedNames];
-
-					const selectedCanonical = isJapaneseMode && selectedName
-						? canonicalNames.find(n => japaneseNameMap[n] === selectedName)
-						: selectedName;
+					const winner = displayWinner;
+					const activeCanonicalNames = [...includedNames];
+					const selectedCanonical = selectedName;
 
 					addSpin(winner, activeCanonicalNames, selectedCanonical);
 					getHistoricalColdStreaks();
@@ -299,41 +269,39 @@ function drawCanvas() {
     ctx.drawImage(wheelCanvas, -canvasCenterX, -canvasCenterY);
 
     // Draw highlight over the current winning segment
-	if (!isJapaneseMode) {
-		let highlightStart = 0;
-		for (let i = 0; i < winningSegment; i++) highlightStart += segmentAngles[i];
-		const highlightArc = segmentAngles[winningSegment];
-		ctx.fillStyle = '#f2f2f2';
-		ctx.beginPath();
-		ctx.moveTo(0, 0);
-		ctx.arc(0, 0, wheelRadius + 1, highlightStart, highlightStart + highlightArc, false);
-		ctx.lineTo(0, 0);
-		ctx.fill();
-		ctx.strokeStyle = '#f2f2f2';
-		ctx.lineWidth = 2;
-		ctx.stroke();
-		ctx.save();
-		ctx.rotate(highlightStart + highlightArc / 2);
-		ctx.textAlign = "right";
-		ctx.textBaseline = "middle";
-		ctx.fillStyle = "black";
-		ctx.font = "14px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif";
-		ctx.fillText(shuffledNames[winningSegment], wheelRadius - 10, 0);
-		ctx.restore();
-	}
+	let highlightStart = 0;
+	for (let i = 0; i < winningSegment; i++) highlightStart += segmentAngles[i];
+	const highlightArc = segmentAngles[winningSegment];
+	ctx.fillStyle = '#f2f2f2';
+	ctx.beginPath();
+	ctx.moveTo(0, 0);
+	ctx.arc(0, 0, wheelRadius + 1, highlightStart, highlightStart + highlightArc, false);
+	ctx.lineTo(0, 0);
+	ctx.fill();
+	ctx.strokeStyle = '#f2f2f2';
+	ctx.lineWidth = 2;
+	ctx.stroke();
+	ctx.save();
+	ctx.rotate(highlightStart + highlightArc / 2);
+	ctx.textAlign = "right";
+	ctx.textBaseline = "middle";
+	ctx.fillStyle = "black";
+	ctx.font = "14px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif";
+	ctx.fillText(shuffledNames[winningSegment], wheelRadius - 10, 0);
+	ctx.restore();
 	ctx.restore();
 
 	// Draw spin button
 	ctx.save();
 	ctx.beginPath();
 	ctx.arc(canvasCenterX, canvasCenterY, spinButtonRadius, 0, TWO_PI);
-	ctx.fillStyle = isJapaneseMode ? "#BC002D" : busy ? "#ccc" : "white";
+	ctx.fillStyle = busy ? "#ccc" : "white";
 	ctx.fill();
 	ctx.fillStyle = busy ? "white" : "black";
 	ctx.font = "14px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif";
     ctx.textAlign = "center";
 	ctx.textBaseline = "middle";
-	ctx.fillText(busy ? isJapaneseMode ? "紡糸..." : "Spinning..." : isJapaneseMode ? "スピン" : "SPIN", canvasCenterX, canvasCenterY);
+	ctx.fillText(busy ? "Spinning..." : "SPIN", canvasCenterX, canvasCenterY);
 
 	// Draw seasonal wreath
 	if (month == 12) {
@@ -478,7 +446,7 @@ function wheelStopEffectSpectacle() {
 // Show streak badges on name buttons
 const displayToCanonical = {};
 canonicalNames.forEach(c => {
-    const display = isJapaneseMode ? japaneseNameMap[c] : c;
+    const display = c;
     displayToCanonical[display] = c;
 });
 
@@ -617,7 +585,7 @@ mainCanvas.addEventListener("click", e => {
 	const x = e.clientX - rect.left-canvasCenterX;
 	const y = e.clientY - rect.top-canvasCenterY;
 	if (Math.sqrt(x*x + y*y) <= spinButtonRadius) {
-		if (busy || includedNames.length < 2) return;
+		if (busy || includedNames.length < 1) return;
 		resumeAudio();
 		busy = true;
 		spinLogged = false;
