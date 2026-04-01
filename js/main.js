@@ -31,7 +31,7 @@ const year = today.getFullYear();
 const month = today.getMonth() + 1;
 const day = today.getDate();
 
-const canonicalNames = ["Aaron D", "Aaron E", "Andrea", "Jasmine", "Jayden", "Jessica", "Josey", "Lauren", "Michelle", "Quintin", "Sam", "Victoria"];
+const canonicalNames = ["Aaron D", "Aaron E", "Andrea", "Ben", "Jasmine", "Jayden", "Jessica", "Josey", "Lauren", "Michelle", "Quintin", "Sam", "Victoria"];
 const displayNames = [...canonicalNames];
 
 let names = [...displayNames];
